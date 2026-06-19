@@ -1,0 +1,41 @@
+{
+  "name": "David Ogunfowora — Technical Writing Portfolio",
+  "colors": {
+    "primary": "#3082CE",
+    "light": "#EDF3FF",
+    "dark": "#1A2E49"
+  },
+  "topbarLinks": [
+    {
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com/in/davidogunfowora"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Welcome",
+      "pages": ["introduction"]
+    },
+    {
+      "group": "Clearfield Data Solutions",
+      "pages": [
+        "clearfield-data-architecture-overview",
+        "clearfield-data-mapping-guide",
+        "clearfield-fax-source-automation-etl-process",
+        "clearfield-source-code-structure-reference-guide",
+        "clearfield-campaign-performance-report-user-guide",
+        "clearfield-matchback-analysis-process-methodology-guide",
+        "clearfield-donor-lifecycle-segment-reference-guide"
+      ]
+    },
+    {
+      "group": "Meridian Digital Group",
+      "pages": [
+        "meridian-attribution-report-process-methodology-guide"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "linkedin": "https://www.linkedin.com/in/davidogunfowora"
+  }
+}

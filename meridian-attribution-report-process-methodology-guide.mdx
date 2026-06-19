@@ -1,0 +1,276 @@
+---
+title: "Attribution Report — Process & Methodology Guide"
+description: "How cross-channel campaign performance data is gathered, combined, and interpreted to give client strategy teams a full picture of digital campaign results."
+---
+
+# Attribution Report — Process & Methodology Guide
+
+| Field | Value |
+|---|---|
+| **Document Title** | Attribution Report — Process & Methodology Guide |
+| **Document ID** | MDG-ANL-001 |
+| **Version** | 1.0 |
+| **Effective Date** | March 2025 |
+| **Audience** | Account Managers · Client Strategy Teams |
+| **Related Reports** | Social Advertising Report (Salesforce) · UTM Performance Report (Tableau Online) · Donor Scoring Report (Tableau Online) |
+| **Owner** | Analytics & Strategy Division · Meridian Digital Group |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **New to the Attribution Report:** Read Sections 1–3 to understand what the report is and why it exists before using it.
+> **Preparing a request:** Section 6 (Information to Gather) is your working checklist before contacting the analytics team.
+> **Reading the output:** Section 7 (Metric Definitions) and Section 8 (Reading the Report) walk through interpretation.
+
+---
+
+## Table of Contents
+
+1. Purpose and Scope
+2. What the Attribution Report Is — and Why It Exists
+3. The Meridian Digital Group Report Suite
+4. Data Sources
+5. How the Report Is Built — ETL Workflow
+6. Information to Gather Before Requesting
+7. Metric Definitions
+8. Reading the Report
+9. Frequently Asked Questions
+10. Document Revision History
+
+---
+
+## 1. Purpose and Scope
+
+The Attribution Report is the only report in the Meridian Digital Group analytics suite that combines data from two separate systems — Salesforce and Snowflake — into a single view. It exists because neither system alone can answer the question that matters most to client strategy teams: across all of the channels we invested in, which ones actually drove revenue, and at what cost?
+
+This guide is written for account managers and client strategy teams who need to request, interpret, and act on Attribution Report outputs. It explains what the report is, why it requires a different workflow than standard Meridian reports, how it is built, and how to read the results correctly.
+
+You do not need to build the Attribution Report to use this guide. The analytics team handles the data extraction and assembly. What this guide gives you is the context to ask the right questions before requesting the report — and the knowledge to interpret the output accurately when you receive it.
+
+> **OUT OF SCOPE**
+> This guide covers the Attribution Report workflow only. The Social Advertising Report (Salesforce), UTM Performance Report (Tableau Online), and Donor Scoring Report (Tableau Online) are covered in separate documentation. Digital channel strategy, campaign planning, and audience targeting decisions are outside the scope of this guide.
+
+---
+
+## 2. What the Attribution Report Is — and Why It Exists
+
+Most Meridian Digital Group reports are single-source. The Social Advertising Report lives entirely in Salesforce. The UTM Performance and Donor Scoring reports live entirely in Tableau Online, drawing from Snowflake. Each report gives an accurate picture of its own data environment.
+
+The limitation is that no single report can tell you how paid social advertising and digital campaign activity worked together to drive donations. A donor might see a Facebook ad, click away, then return three days later through a UTM-tagged email link to complete their gift. The Social Advertising Report sees the ad impression and click. The UTM report sees the final conversion. Neither one sees the full story.
+
+The Attribution Report is built specifically to bridge that gap. By combining social advertising data from Salesforce with UTM conversion and revenue data from Snowflake, it gives strategy teams the cross-channel picture they need to answer three questions:
+
+- Which channels drove the most revenue — and at what cost?
+- What was our return on ad spend across the full campaign?
+- Where should we shift budget to improve efficiency next cycle?
+
+> **KEY DISTINCTION**
+> The Attribution Report is an internal strategy tool — it is never shared directly with clients. It is built for the Meridian account management and strategy teams to inform recommendations. Client-facing performance conversations draw on the Social Advertising Report and UTM Performance Report separately.
+
+---
+
+## 3. The Meridian Digital Group Report Suite
+
+The Attribution Report exists alongside three other standard reports in the Meridian analytics suite. Understanding where each report lives and what it covers helps clarify why the Attribution Report requires a separate, more complex workflow.
+
+| Report Name | Platform | Audience | Description |
+|---|---|---|---|
+| Social Advertising Report | Salesforce | Account Managers · Clients | Impressions, clicks, CTR, CPC, spend by platform and campaign. One report per client. Client-facing. |
+| UTM Performance Report | Tableau Online (Snowflake) | Account Managers · Clients | Sessions, conversions, revenue, conversion rate, average gift by UTM source and campaign. Client-facing. |
+| Donor Scoring Report | Tableau Online (Snowflake) | Strategy Teams | Constituent engagement scores ranked by likelihood to give or upgrade. Used for audience prioritization. |
+| Attribution Report | Excel (Salesforce + Snowflake) | Strategy Teams · Account Managers | Cross-channel attribution combining social advertising and UTM data. Full-picture revenue and efficiency view. Internal only — not client-facing. |
+
+> **WHY THE ATTRIBUTION REPORT IS DIFFERENT**
+> Every other report in the suite connects to a single data source and is published on a platform the audience accesses directly — Salesforce or Tableau Online. The Attribution Report is the only report that requires pulling from two separate systems, combining them through an ETL process, and delivering the output as an Excel file. This is not a limitation — it is by design. The cross-system merge cannot be done natively in either Salesforce or Tableau Online without custom engineering work.
+
+---
+
+## 4. Data Sources
+
+The Attribution Report draws from exactly two data sources. Understanding what each source contains — and what it does not contain — is essential for interpreting the report correctly and for identifying data gaps when they occur.
+
+| Data Type | System of Record | Source | What It Contains |
+|---|---|---|---|
+| Social Advertising Data | Salesforce Marketing Cloud | Google, YouTube, Facebook, Snapchat, and other social platforms | Ad performance metrics: impressions, clicks, CTR, CPC, spend, and reach by campaign and platform. Lives in Salesforce only — does not exist in Snowflake. |
+| UTM Conversion & Donation Data | Snowflake | Client donation landing pages with UTM-tagged URLs | Session activity, form completions, donations, and revenue tied to specific UTM source, medium, campaign, and content parameters. Cleaned and standardized by the database engineering team before Snowflake ingestion. |
+
+### 4.1 Salesforce Marketing Cloud — Social Advertising Data
+
+Salesforce Marketing Cloud is the platform through which Meridian deploys email and SMS campaigns on behalf of clients, and through which social advertising performance data is aggregated. Social platform data from Google, YouTube, Facebook, and Snapchat flows back into Salesforce, where it is organized by client, campaign, and platform.
+
+For the Attribution Report, the relevant Salesforce data is advertising performance — impressions, clicks, CTR, CPC, and spend. This data does not exist in Snowflake. It must be pulled directly from Salesforce and exported as a CSV for the ETL process.
+
+> **IMPORTANT**
+> Social advertising data lives exclusively in Salesforce. If a campaign ran on a platform that was not connected to the client's Salesforce instance, that platform's data will not be available for the Attribution Report. Confirm platform connectivity with the analytics team before submitting a request.
+
+### 4.2 Snowflake — UTM Conversion & Donation Data
+
+Snowflake is Meridian's cloud data warehouse. UTM-tagged activity from client donation landing pages flows into Snowflake after being cleaned and standardized by the database engineering team. By the time data reaches Snowflake it is analytics-ready — no additional transformation is required for standard UTM and revenue reporting.
+
+For the Attribution Report, the relevant Snowflake data includes sessions, conversions, donation amounts, and UTM parameters (source, medium, campaign, content) that identify which digital campaign drove each visitor to the donation page.
+
+> **UTM ACCURACY NOTE**
+> The quality of UTM data in Snowflake depends entirely on how consistently UTM parameters were applied to campaign URLs before deployment. Missing, inconsistent, or incorrectly formatted UTM parameters will result in unattributed sessions in the Snowflake data. Before requesting an Attribution Report, confirm with the deployment team that UTM parameters were applied correctly for the campaign period in scope.
+
+---
+
+## 5. How the Report Is Built — ETL Workflow
+
+The Attribution Report is the only Meridian report that requires an ETL (Extract, Transform, Load) process before the final output can be assembled. This is because its two data sources — Salesforce and Snowflake — do not share a common data layer. They cannot be joined natively. The ETL process bridges that gap.
+
+The workflow is built in Tableau Prep, Meridian's ETL tool, and the final output is assembled in Excel. The complete process follows six steps.
+
+### Step 1 — Salesforce Export
+
+The analytics team pulls social advertising performance data from Salesforce for the client and campaign period specified in the request. Data is exported as a structured CSV — one row per campaign per platform — containing impressions, clicks, CTR, CPC, and spend.
+
+### Step 2 — Snowflake Export
+
+The analytics team queries the Snowflake data warehouse for UTM conversion and donation data for the same client and campaign period. Data is exported as a structured CSV — one row per UTM source and campaign — containing sessions, conversions, revenue, and average gift.
+
+### Step 3 — Tableau Prep: Data Cleaning & Standardization
+
+Both CSV exports are loaded into Tableau Prep. Each source is cleaned independently — field names are standardized, date formats are aligned, null values are handled, and campaign identifiers are normalized so records from both sources can be compared in the final Excel output.
+
+### Step 4 — Tableau Prep: Output Export
+
+Tableau Prep exports two clean, standardized CSV files: one containing the cleaned social advertising data and one containing the cleaned UTM conversion data. These two files are the inputs for the Excel assembly step.
+
+### Step 5 — Excel Assembly & Metric Calculation
+
+Both CSV files are imported into the Attribution Report Excel template. Excel formulas calculate the cross-channel attribution metrics — ROAS, blended cost per donor, revenue by channel, and channel contribution percentage — that require fields from both sources to compute.
+
+### Step 6 — Review & Delivery
+
+The completed Attribution Report is reviewed by the analytics team for data integrity before delivery to the account manager and strategy team. The report is delivered as an Excel file — it is not published to Salesforce or Tableau Online.
+
+> **WHY EXCEL AND NOT TABLEAU ONLINE**
+> Standard Meridian reports published to Tableau Online connect directly to Snowflake — no ETL required. The Attribution Report cannot follow this pattern because its social advertising data lives in Salesforce, not Snowflake. Merging the two sources requires the Tableau Prep ETL step, and the resulting combined dataset is delivered as Excel rather than a live dashboard. An automated cross-system pipeline would require custom database engineering work outside the current analytics infrastructure.
+
+---
+
+## 6. Information to Gather Before Requesting
+
+Complete requests are processed faster and produce more accurate outputs. Before contacting the analytics team to request an Attribution Report, gather every Required item in the table below. Incomplete requests will be returned for clarification before work begins.
+
+| Information Needed | Required? | Notes |
+|---|---|---|
+| Client name and reporting period | Required | Specify the client and the date range for the Attribution Report — typically aligned to a campaign flight or fiscal month. |
+| Campaign list from Salesforce | Required | Provide the names and IDs of all social advertising campaigns to be included. The analytics team uses these to pull the correct Salesforce export. |
+| UTM campaign parameters | Required | Provide the UTM source, medium, and campaign values for all digital campaigns to be included. These must match exactly what was deployed on the donation landing pages. |
+| Reporting period start and end dates | Required | Confirm the exact date range. Social and UTM data must be pulled for the same period to ensure an apples-to-apples comparison. |
+| Platform scope | Required | Confirm which social platforms were active during the campaign period: Google, YouTube, Facebook, Snapchat, other. Only active platforms will be included in the Salesforce export. |
+| New donor flag | Conditional | If the report needs to calculate cost per new donor acquired, confirm whether a new donor identifier is available in the Snowflake UTM data for this client. |
+| Large gift exclusions | Conditional | If any donations above a defined threshold (e.g., $10,000) should be excluded from revenue calculations to prevent outlier distortion, note the exclusion amount. |
+| Prior period for comparison | Conditional | If the strategy team wants a prior-period comparison column in the output, provide the prior period date range. |
+
+> **TIME-SAVER**
+> Standard Attribution Report turnaround is 3–5 business days from receipt of a complete request. Requests missing campaign lists, UTM parameters, or platform scope confirmation will be returned and the clock resets when the complete information is received. Gathering this information before you reach out is the single most effective way to accelerate delivery.
+
+---
+
+## 7. Metric Definitions
+
+The following table defines every metric that appears in the Attribution Report output. Metrics are grouped by source — Social (from Salesforce), UTM (from Snowflake), and Attribution (calculated from both sources combined).
+
+| Metric | Source | Definition / Formula | Interpretation Guidance |
+|---|---|---|---|
+| Impressions | Social | Total number of times an ad was displayed across all targeted placements for a given campaign. | A high impression count with low CTR may indicate the creative is not resonating with the audience. Compare across platforms to identify where reach is strongest. |
+| Clicks | Social | Total number of times a user clicked on an ad. | Clicks measure intent to engage. High clicks with low conversions may indicate a landing page issue rather than an ad performance issue. |
+| CTR (Click-Through Rate) | Social | Clicks ÷ Impressions × 100 | Benchmark CTR varies by platform: Google Search typically runs 3–5%, social display 0.5–1.5%. A CTR significantly below benchmark warrants creative review. |
+| CPC (Cost Per Click) | Social | Total Ad Spend ÷ Clicks | CPC measures the efficiency of paid traffic generation. Compare CPC against conversion rate — a high CPC is acceptable if conversion rate is strong. |
+| Total Ad Spend | Social | Sum of all spend across platforms and campaigns for the reporting period. | Ad spend is reported gross. Net return analysis requires combining spend with UTM conversion revenue in the Attribution Report. |
+| Sessions | UTM | Total number of visits to the donation landing page attributed to a UTM-tagged source. | Sessions measure traffic volume. Compare sessions against conversions to identify which sources are driving high-quality traffic vs. high-volume but low-converting traffic. |
+| Conversions | UTM | Total number of completed donation form submissions attributed to a UTM source. | A conversion is a completed donation — not a click or a page visit. Conversion count is the primary UTM success metric. |
+| Conversion Rate | UTM | Conversions ÷ Sessions × 100 | Typical digital donation conversion rates range from 1–5% depending on audience warmth and ask amount. Rates below 1% suggest landing page, messaging, or audience alignment issues. |
+| Revenue | UTM | Sum of all donation amounts attributed to a UTM source for the reporting period. | Revenue is gross — it does not account for ad spend. Use ROAS for net efficiency analysis. |
+| Average Gift | UTM | Revenue ÷ Conversions | Rising average gift may reflect successful ask string adjustments or an increasingly engaged donor base. Declining average gift may signal audience fatigue or ask string misalignment. |
+| Total Attribution Revenue | Attribution | Sum of all revenue attributed across both social-influenced and UTM-direct sources for the reporting period. | Total attribution revenue will exceed UTM-only revenue because it captures social-influenced gifts that gave through a direct or organic channel after ad exposure. |
+| Revenue by Channel | Attribution | Total revenue segmented by originating channel: Google, YouTube, Facebook, Snapchat, Email, SMS, Organic. | Channel revenue breakdown reveals which platforms are driving the most dollar value — not just the most traffic. Use this to guide budget allocation decisions. |
+| ROAS (Return on Ad Spend) | Attribution | Total Attribution Revenue ÷ Total Ad Spend | An ROAS of 1.0x means the campaign broke even. An ROAS above 1.0x means revenue exceeded spend. Target ROAS benchmarks vary by campaign type — acquisition campaigns typically run 1.5x–3x; retention campaigns 3x–6x. |
+| Blended Cost Per Donor | Attribution | Total Ad Spend ÷ Total New Donors Acquired | Blended CPD normalizes acquisition cost across all channels. Use this metric when evaluating full-funnel efficiency rather than channel-by-channel performance. |
+| Channel Contribution % | Attribution | Channel Revenue ÷ Total Attribution Revenue × 100 | Shows each channel's share of total attributed revenue. A channel with high spend but low contribution percentage is a candidate for budget reallocation. |
+
+> **FORMULA NOTE**
+> Social metrics are pulled directly from Salesforce as reported by the ad platforms. UTM metrics are calculated from Snowflake data. Attribution metrics are calculated in Excel using formulas that combine fields from both sources. If a value appears as zero or blank in the Attribution section, confirm that both the social export and the UTM export contain data for the same campaign period.
+
+---
+
+## 8. Reading the Report
+
+The Attribution Report is structured as a flat Excel table — one row per channel per campaign, with metric columns across the top. Reading it correctly requires understanding a few key principles about how cross-channel data behaves.
+
+### 8.1 Social Metrics and UTM Metrics Measure Different Things
+
+Social metrics (impressions, clicks, CTR, spend) measure ad exposure and engagement. UTM metrics (sessions, conversions, revenue) measure downstream behavior on the donation page. These two sets of numbers will never add up to a single total — they are measuring different moments in the donor journey. A click recorded in Salesforce is not the same event as a session recorded in Snowflake, even if they came from the same person.
+
+> **BEST PRACTICE**
+> When presenting channel performance to a client strategy team, lead with the Attribution metrics — ROAS, revenue by channel, and channel contribution percentage. These are the numbers that answer the budget question. Use the social and UTM detail rows to explain why those numbers look the way they do.
+
+### 8.2 ROAS Is the Primary Efficiency Metric
+
+Return on ad spend is the single most useful metric in the Attribution Report for strategy decisions. It normalizes revenue and spend across channels of different sizes, making it possible to compare a $5,000 Google campaign against a $15,000 Facebook campaign on equal terms. A channel with lower absolute revenue but higher ROAS is generating more value per dollar spent.
+
+Typical ROAS benchmarks by campaign type:
+
+- Acquisition campaigns (targeting new donors): 1.5x–3.0x is acceptable; above 3.0x is strong
+- Retention / reactivation campaigns (targeting existing or lapsed donors): 3.0x–6.0x is expected
+- Brand awareness campaigns: ROAS is a secondary metric — reach and CTR are more relevant
+
+> **IMPORTANT**
+> ROAS benchmarks vary significantly by client, audience maturity, ask amount, and campaign type. Always compare against client-specific prior-period benchmarks before drawing conclusions from industry ranges. A new client's first acquisition campaign will rarely hit the same ROAS as a seasoned program with an established donor file.
+
+### 8.3 Channel Contribution Percentage Drives Budget Decisions
+
+Channel contribution percentage shows each platform's share of total attributed revenue. This is the metric that directly informs budget reallocation recommendations. A channel contributing 8% of revenue while consuming 25% of budget is a candidate for reduction. A channel contributing 35% of revenue on 20% of budget is a candidate for increased investment.
+
+When presenting reallocation recommendations, always pair contribution percentage with ROAS — a channel can have high contribution simply because it received more budget, not because it is more efficient. The combination of high contribution and high ROAS is the signal that warrants increased investment.
+
+### 8.4 Unattributed Revenue Requires Investigation
+
+The Attribution Report will include an Unattributed row for any sessions or donations in the Snowflake data that did not carry a valid UTM parameter. A small unattributed figure (under 10% of total sessions) is normal — some donors navigate directly to the site without clicking a tracked link. A large unattributed figure (above 20%) usually indicates a UTM deployment issue — campaigns were sent without proper UTM tagging, or the tags were malformed.
+
+> **IF UNATTRIBUTED IS HIGH**
+> Flag this to the analytics team before presenting results to a client strategy group. High unattributed revenue means the total attribution figures are understated — the report is showing less revenue than the campaign actually influenced. The fix is upstream: UTM parameters must be applied correctly before the next campaign deployment.
+
+---
+
+## 9. Frequently Asked Questions
+
+**Q: Why can't I just pull attribution data from Tableau Online like the other reports?**
+
+Tableau Online reports at Meridian connect directly to Snowflake. Social advertising data lives in Salesforce — it does not exist in Snowflake. There is no single platform that holds both data sources simultaneously, which is why the Attribution Report requires a separate ETL process through Tableau Prep and final assembly in Excel.
+
+**Q: The ROAS in the Attribution Report is higher than what I calculated from the UTM Report alone. Which one is right?**
+
+Both are right — they are measuring different things. The UTM Report shows revenue from sessions that arrived through a tracked UTM link. The Attribution Report adds social-influenced revenue — donors who saw an ad, did not click through a tracked link, but later converted through a direct or organic visit. Attribution revenue is almost always higher than UTM-only revenue. The Attribution Report gives the more complete picture of a campaign's true influence on giving.
+
+**Q: Can we share the Attribution Report with the client directly?**
+
+No. The Attribution Report is an internal strategy document only. It is not formatted or structured for client delivery, and the cross-channel methodology involves data assembly assumptions that require context to interpret correctly. Client-facing performance reporting uses the Social Advertising Report and UTM Performance Report separately. If a client asks for a cross-channel view, the strategy team should prepare a summary derived from the Attribution Report rather than sharing the raw file.
+
+**Q: What if the campaign period for the social data and the UTM data don't align exactly?**
+
+This is a common issue when social campaigns launch or end on different dates than digital UTM campaigns. When submitting your request, specify the intended reporting period clearly. The analytics team will pull each source for the exact date range you provide — if the ranges differ between sources, the resulting Attribution Report will reflect that mismatch. Confirming date alignment before requesting the report prevents this issue.
+
+**Q: How long does it take to get the Attribution Report?**
+
+Standard turnaround is 3–5 business days from receipt of a complete request. Rush requests (1–2 business days) require analytics manager approval and are not guaranteed. The most common cause of delays is an incomplete request — missing campaign lists, UTM parameters, or platform scope. Complete the information checklist in Section 6 before submitting.
+
+**Q: Can we run an Attribution Report for a campaign that ran six months ago?**
+
+Yes, as long as the historical data is still available in both Salesforce and Snowflake. Salesforce data retention policies vary — confirm with the analytics team that the campaign period is still accessible before submitting a historical request. Snowflake data is retained indefinitely unless a client-specific data purge has occurred.
+
+> **NEED HELP?**
+> To submit an Attribution Report request or ask a pre-request question, contact the Meridian Analytics team at analytics@meridiandigitalgroup.com. To check the status of an active request, contact your assigned analytics lead directly.
+
+---
+
+## 10. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | March 2025 | David Ogunfowora | Initial release. Full process and methodology guide covering data sources, ETL workflow, metric definitions, and output interpretation. |
+
+---
+
+*FOR INTERNAL USE — ACCOUNT MANAGEMENT & STRATEGY TEAMS · © 2025 Meridian Digital Group*

@@ -1,0 +1,295 @@
+---
+title: "Fax Source Automation — ETL Process Document"
+description: "Step-by-step documentation of the Source Code Automation ETL workflow — the process that transforms a raw promotion file into the deduplicated source code lookup table that powers Campaign Performance reporting."
+---
+
+# Fax Source Automation — ETL Process Document
+
+| Field | Value |
+|---|---|
+| **Document Title** | Fax Source Automation — ETL Process Document |
+| **Document ID** | CDS-ETL-001 |
+| **Version** | 1.0 |
+| **Effective Date** | March 2025 |
+| **Audience** | Data Analysts · Data Engineers · Analytics Team |
+| **Related System** | Snowflake (FACTPROMOTION) · Power BI (Campaign Performance Report) |
+| **Owner** | Data Infrastructure Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **Running the workflow:** Begin with Section 3 (Input Requirements) to confirm data readiness before executing. Section 4 (Process Steps) is your step-by-step execution guide.
+> **Troubleshooting:** Section 6 (Common Issues) covers the most frequent failure modes and their resolutions.
+> **New to this process:** Read Sections 1–2 first to understand why this workflow exists before reviewing the technical steps.
+
+> **PORTFOLIO NOTE**
+> This document was created as part of a technical writing portfolio. All field names, tool names, and data values are fictional and created for instructional purposes. Content reflects the author's firsthand expertise in ETL pipeline documentation and nonprofit fundraising data architecture.
+
+---
+
+## Table of Contents
+
+1. Purpose and Background
+2. Why This Process Exists
+3. Input Requirements
+4. Process Steps — Detailed Walkthrough
+5. Output Specifications
+6. Common Issues & Resolutions
+7. Glossary
+8. Document Revision History
+
+---
+
+## 1. Purpose and Background
+
+The Fax Source Automation (FSA) workflow is an ETL (Extract, Transform, Load) process that runs following each promotion file ingestion cycle. Its purpose is to transform the raw `FACTPROMOTION` table — which contains one row per donor per mailing — into a deduplicated **Source Code Lookup Table** that contains exactly one row per unique source code.
+
+This lookup table is the foundational reference file for the Campaign Performance Report in Power BI. Without it, gift transactions cannot be attributed to specific campaigns.
+
+### Workflow Snapshot
+
+| Item | Detail |
+|---|---|
+| **Input** | FACTPROMOTION (Snowflake) |
+| **Output** | Source Code Lookup Table (Snowflake staging area / Power BI data model) |
+| **Trigger** | Manual execution following each promotion file ingestion |
+| **Run Frequency** | Per campaign cycle (typically monthly or per fiscal quarter) |
+| **Estimated Runtime** | 3–8 minutes depending on promotion file size |
+| **PII in Output** | None — all PII fields are stripped during processing |
+
+---
+
+## 2. Why This Process Exists
+
+### The Scale Problem
+
+A direct mail campaign mailing 50,000 pieces generates 50,000 rows in `FACTPROMOTION` — one per donor record mailed. Many thousands of those rows carry the same source code, the same program, the same mail date, and the same campaign attributes. Only the DONORID and PII fields differ between them.
+
+The Campaign Performance Report does not need donor-level promotion data. It needs to know:
+
+- How many records were mailed under each source code?
+- What campaign does each source code belong to?
+- What program, audience segment, and package did each source code represent?
+
+These are source-code-level questions, not donor-level questions.
+
+### The Solution
+
+The FSA workflow collapses the full promotion file to one row per unique source code, counting mail quantity in the process, and strips all PII. The result is a compact, clean reference table the reporting layer can join directly to transaction data.
+
+### Why PII Stripping Matters
+
+`FACTPROMOTION` contains PII fields for acquisition campaigns (prospect name, address, ZIP). The Source Code Lookup Table is used in the reporting layer by strategy and account management teams who do not have authorized access to PII. Stripping PII at this step ensures the lookup table is safe to use in any reporting context without triggering PII access controls.
+
+---
+
+## 3. Input Requirements
+
+Before executing the FSA workflow, confirm all items below are satisfied.
+
+### 3.1 Data Readiness Checklist
+
+- [ ] The promotion file for the target client and fiscal year has been successfully ingested to `FACTPROMOTION`
+- [ ] `FACTPROMOTION` has been validated — no null SOURCECODE values, no null MEDIAEVENTDATE values
+- [ ] The SOURCECODE format has been confirmed against the Source Code Structure Reference Guide for this client
+- [ ] The target fiscal year is confirmed and consistent with the FY values in FACTPROMOTION
+- [ ] A prior-run source code lookup table for this client (if one exists) has been archived or flagged for replacement
+
+### 3.2 Input Table — FACTPROMOTION
+
+The FSA workflow reads from `FACTPROMOTION` with the following fields in scope:
+
+| Field | Data Type | Role in Workflow |
+|---|---|---|
+| PROMOID | VARCHAR | Record identifier — used to count rows per source code (mail quantity) |
+| DONORID | VARCHAR | Donor identifier — present in input but **stripped from output** |
+| SOURCECODE | VARCHAR | Deduplication key — one output row per unique SOURCECODE |
+| MEDIAEVENTDATE | DATE | Mail drop date — retained in output as MAIL_DATE |
+| FY | INTEGER | Fiscal year — retained in output |
+| PROGRAM | VARCHAR | Fundraising program — retained in output |
+| CAMPAIGN | VARCHAR | Campaign name — retained in output |
+| CAMPAIGNCODE | VARCHAR | Campaign code — retained in output |
+| AUDIENCE | VARCHAR | Audience segment code — retained in output |
+| LISTID | VARCHAR | List identifier — retained in output |
+| LISTSEGMENT | VARCHAR | List segment detail — retained in output |
+| PANEL | VARCHAR | Test panel code — retained in output |
+| PACKAGE | VARCHAR | Creative package code — retained in output |
+| HOUSEPROSPECT | VARCHAR | House or Prospect flag — retained in output |
+| FIRSTNAME | VARCHAR | PII — **stripped, not in output** |
+| LASTNAME | VARCHAR | PII — **stripped, not in output** |
+| STREETADDRESS | VARCHAR | PII — **stripped, not in output** |
+| CITY | VARCHAR | PII — **stripped, not in output** |
+| ZIPCODE | VARCHAR | PII — **stripped, not in output** |
+
+---
+
+## 4. Process Steps — Detailed Walkthrough
+
+The FSA workflow follows five sequential steps. Each step must complete successfully before the next begins.
+
+### Step 1: QUERY — Extract Promotion Records
+
+**Purpose:** Pull the full promotion file for the target client and fiscal year from FACTPROMOTION.
+
+**Action:** Execute a SELECT query against FACTPROMOTION filtered to the target client and FY. Include all non-PII fields listed in the input table above. Do not include PII fields in the SELECT statement.
+
+**Filter conditions:**
+- Client identifier matches target client
+- FY matches target fiscal year
+- SOURCECODE IS NOT NULL
+- MAILQUANTITY > 0 (exclude test or zero-quantity records if present)
+
+**Output of this step:** A filtered dataset of all promotion records for the target client and FY, with PII fields excluded from the result set.
+
+**Quality check:** Confirm record count is consistent with expected promotion file size. A significant variance (>5%) from expected count should be investigated before proceeding.
+
+---
+
+### Step 2: DEDUPLICATE — Collapse to One Row Per Source Code
+
+**Purpose:** Reduce the promotion dataset from one-row-per-donor to one-row-per-source-code.
+
+**Action:** Group all records by SOURCECODE. For each unique SOURCECODE:
+
+- **COUNT(PROMOID)** → this becomes MAIL_QTY in the output (total records mailed under this source code)
+- **Retain campaign attribute fields** using a consistent aggregation function (MIN or MAX — values should be identical for all records sharing the same source code)
+
+**Fields retained from FACTPROMOTION per unique SOURCECODE:**
+
+| Output Field | Aggregation | Source Field |
+|---|---|---|
+| SOURCECODE | GROUP BY key | SOURCECODE |
+| MAIL_QTY | COUNT(PROMOID) | PROMOID |
+| MAIL_DATE | MIN(MEDIAEVENTDATE) | MEDIAEVENTDATE |
+| FISCAL_YEAR | MIN(FY) | FY |
+| PROGRAM | MIN(PROGRAM) | PROGRAM |
+| CAMPAIGN | MIN(CAMPAIGN) | CAMPAIGN |
+| CAMPAIGN_CODE | MIN(CAMPAIGNCODE) | CAMPAIGNCODE |
+| AUDIENCE_CODE | MIN(AUDIENCE) | AUDIENCE |
+| LIST_ID | MIN(LISTID) | LISTID |
+| LIST_SEGMENT | MIN(LISTSEGMENT) | LISTSEGMENT |
+| PANEL | MIN(PANEL) | PANEL |
+| PACKAGE_CODE | MIN(PACKAGE) | PACKAGE |
+| HOUSE_PROSPECT | MIN(HOUSEPROSPECT) | HOUSEPROSPECT |
+
+**Quality check:** The number of rows in the output of this step equals the number of unique source codes in the promotion file. Confirm this count is reasonable for the campaign set being processed.
+
+---
+
+### Step 3: STRIP PII — Confirm PII Exclusion
+
+**Purpose:** Verify that no PII fields are present in the deduplicated dataset before the enrichment and load steps.
+
+**Action:** Review the column list of the deduplicated output. Confirm that none of the following fields are present: FIRSTNAME, LASTNAME, STREETADDRESS, CITY, ZIPCODE, EMAILADDRESS, PHONE, or any field that could identify an individual.
+
+This step is a verification checkpoint, not a transformation step. If PII fields are present at this point, the process must halt and the query from Step 1 must be corrected.
+
+> **HALT IF PII IS PRESENT**
+> Do not proceed to Step 4 if any PII field is present in the dataset. The Source Code Lookup Table is used in reporting environments that do not have PII access authorization. Loading PII to this table is a compliance violation. Return to Step 1 and correct the SELECT statement.
+
+---
+
+### Step 4: ENRICH — Decode Source Code Components
+
+**Purpose:** Parse each source code string to extract its encoded component fields as individually queryable columns.
+
+**Background:** Source codes in the Clearfield system are structured alphanumeric strings that encode multiple campaign attributes in a single value. See the Source Code Structure Reference Guide for the complete position-by-position definition.
+
+**Action:** Apply string parsing logic to SOURCECODE to extract and populate the following derived fields:
+
+| Derived Field | Description | Example |
+|---|---|---|
+| SC_FY_PREFIX | Fiscal year component extracted from source code | FY25 |
+| SC_PROGRAM_CODE | Program type code extracted from source code | RNW |
+| SC_CAMPAIGN_MONTH | Campaign month code extracted from source code | MAR |
+| SC_AUDIENCE_CODE | Audience segment code extracted from source code | A01 |
+| SC_PACKAGE_CODE | Package test code extracted from source code | P1 |
+
+**Quality check:** Spot-check 5–10 source codes manually. Confirm that derived fields match the expected values based on known source code structure for the client.
+
+---
+
+### Step 5: LOAD — Write to Source Code Lookup Table
+
+**Purpose:** Load the completed, enriched, PII-free source code summary to the reporting environment.
+
+**Action:**
+1. Write the output of Steps 2–4 to the target `SOURCE_CODE_LOOKUP` table in the Snowflake staging schema or Power BI data model, depending on the client's configuration.
+2. If a prior Source Code Lookup Table exists for this client and FY, it should be archived or overwritten according to the client's data refresh policy.
+3. Confirm the row count in the loaded table matches the row count from Step 2.
+
+**Post-load verification:**
+- [ ] Row count in `SOURCE_CODE_LOOKUP` matches expected unique source code count
+- [ ] MAIL_QTY values sum to the total record count from the original promotion file
+- [ ] No null values in SOURCECODE, FISCAL_YEAR, PROGRAM, or MAIL_QTY columns
+- [ ] No PII fields present in the loaded table
+
+---
+
+## 5. Output Specifications
+
+### Source Code Lookup Table — Schema
+
+| Field Name | Data Type | Nullable? | Description |
+|---|---|---|---|
+| SOURCECODE | VARCHAR | No | Unique source code — primary key of this table |
+| MAIL_QTY | INTEGER | No | Total records mailed under this source code |
+| MAIL_DATE | DATE | No | Mail drop date for this source code |
+| FISCAL_YEAR | INTEGER | No | Fiscal year of the campaign |
+| PROGRAM | VARCHAR | No | Fundraising program type |
+| CAMPAIGN | VARCHAR | Yes | Campaign name or description |
+| CAMPAIGN_CODE | VARCHAR | No | Short campaign identifier |
+| AUDIENCE_CODE | VARCHAR | No | Audience segment code |
+| LIST_ID | VARCHAR | Yes | List or house segment identifier |
+| LIST_SEGMENT | VARCHAR | Yes | Detailed list segment within list ID |
+| PANEL | VARCHAR | Yes | Test panel designation |
+| PACKAGE_CODE | VARCHAR | No | Creative package code |
+| HOUSE_PROSPECT | VARCHAR | No | House donor or Prospect (outside list) |
+| SC_FY_PREFIX | VARCHAR | Yes | Derived: fiscal year extracted from source code |
+| SC_PROGRAM_CODE | VARCHAR | Yes | Derived: program code extracted from source code |
+| SC_CAMPAIGN_MONTH | VARCHAR | Yes | Derived: campaign month extracted from source code |
+| SC_AUDIENCE_CODE | VARCHAR | Yes | Derived: audience code extracted from source code |
+| SC_PACKAGE_CODE | VARCHAR | Yes | Derived: package code extracted from source code |
+
+### How the Output Is Used
+
+The Source Code Lookup Table is joined to `FACTGIFT` in Power BI on the SOURCECODE field. This join populates all campaign attribution fields (program, campaign, package, audience) on each gift transaction, enabling the Campaign Performance Report to display campaign-level KPIs.
+
+---
+
+## 6. Common Issues & Resolutions
+
+| Issue | Likely Cause | Resolution |
+|---|---|---|
+| Source code count in output is significantly lower than expected | Some source codes have null or blank values in FACTPROMOTION | Return to Step 1; add IS NOT NULL filter on SOURCECODE and re-run |
+| MAIL_QTY sum does not equal total promotion file record count | Excluded records (null SOURCECODE, zero quantity) are not accounted for | Document the exclusion count separately; confirm with analytics lead |
+| Derived SC_ fields are blank or incorrect for some source codes | Client uses a non-standard source code format for some campaigns | Review source code format exceptions with the client; update parsing logic |
+| PII fields appear in Step 3 verification | SELECT statement in Step 1 included PII columns | Halt process; correct Step 1 SELECT to exclude all PII fields; re-run from Step 1 |
+| Lookup table join produces unmatched gifts in Campaign Performance Report | Gifts exist with source codes not present in the promotion file | Identify unmatched source codes; confirm whether corresponding promotion records exist |
+| Duplicate SOURCECODE values in output | GROUP BY not applied correctly in Step 2 | Review Step 2 aggregation logic; confirm SOURCECODE is in GROUP BY clause |
+
+---
+
+## 7. Glossary
+
+| Term | Definition |
+|---|---|
+| **Deduplication** | The process of collapsing multiple rows that share a common key value (in this case, SOURCECODE) into a single summary row. |
+| **ETL** | Extract, Transform, Load — a data pipeline pattern that extracts data from a source, applies transformations, and loads the result to a destination. |
+| **FACTPROMOTION** | The Snowflake fact table containing one row per donor per mailing. Source table for the FSA workflow. |
+| **Fiscal Year (FY)** | The 12-month financial reporting period defined by the client organization. |
+| **Mail Quantity (MAIL_QTY)** | The count of donor or prospect records mailed under a specific source code. Produced by counting rows during deduplication. |
+| **PII (Personally Identifiable Information)** | Data fields that can identify an individual. Stripped from all ETL outputs that flow to the reporting layer. |
+| **Source Code** | An alphanumeric identifier encoding campaign metadata — fiscal year, program, campaign, audience, and package. Primary attribution key. |
+| **Source Code Lookup Table** | The output of the FSA workflow. One row per source code. Zero PII. Used by Power BI Campaign Performance Report. |
+
+---
+
+## 8. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | March 2025 | David Ogunfowora | Initial release. Full process documentation covering all five steps, input requirements, output schema, and common issues. |
+
+---
+
+*FOR INTERNAL USE — DATA INFRASTRUCTURE & ANALYTICS TEAMS · © 2025 Clearfield Data Solutions*

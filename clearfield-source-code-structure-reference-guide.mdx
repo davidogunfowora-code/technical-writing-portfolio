@@ -1,0 +1,227 @@
+---
+title: "Source Code Structure Reference Guide"
+description: "Decoding guide for campaign attribution source codes — position-by-position field definitions, a lookup table of standard values, and examples for all active programs."
+---
+
+# Source Code Structure Reference Guide
+
+| Field | Value |
+|---|---|
+| **Document Title** | Source Code Structure Reference Guide |
+| **Document ID** | CDS-REF-002 |
+| **Version** | 1.0 |
+| **Effective Date** | March 2025 |
+| **Audience** | Strategy Teams · Account Managers · Data Analysts |
+| **Owner** | Analytics & Reporting Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> To decode an unknown source code, go to Section 3 (Source Code Anatomy) and read each segment left to right. Then use the lookup tables in Sections 4–8 to identify what each segment value represents.
+
+> **PORTFOLIO NOTE**
+> This document was created as part of a technical writing portfolio. All source codes, field values, and examples are fictional and created for instructional purposes.
+
+---
+
+## Table of Contents
+
+1. Purpose and Scope
+2. What a Source Code Is
+3. Source Code Anatomy — Position-by-Position Breakdown
+4. Segment 1 — Fiscal Year Prefix
+5. Segment 2 — Program Code
+6. Segment 3 — Campaign Month Code
+7. Segment 4 — Audience Code
+8. Segment 5 — Package Code
+9. Full Source Code Decode Table — Examples
+10. Source Code FAQ
+11. Document Revision History
+
+---
+
+## 1. Purpose and Scope
+
+This guide provides a complete reference for reading and decoding the source codes used in the Clearfield Analytics Platform. Source codes are the primary campaign attribution key in the direct mail fundraising data model. Every source code encodes five pieces of campaign metadata — fiscal year, program, campaign month, audience segment, and package — in a single alphanumeric string.
+
+This guide is designed for strategy and account management teams who work with campaign performance data and need to interpret source codes without analyst support. It covers the structural rules that apply across all clients using the Clearfield standard source code format.
+
+> **NOT ALL SOURCE CODES FOLLOW THIS STRUCTURE**
+> Some clients submit data with legacy or proprietary source code formats that were established before the Clearfield standard was adopted. If a source code does not decode cleanly using this guide, contact your analytics lead to confirm whether a client-specific decode rule applies.
+
+---
+
+## 2. What a Source Code Is
+
+A source code is an alphanumeric identifier assigned to a specific segment within a direct mail campaign. When a mail piece is created, every record in that mailing is assigned the source code for the segment it belongs to. When a donor responds to that mailing and makes a gift, the source code travels with the gift record.
+
+The source code is what makes campaign attribution possible. By matching the source code on a gift transaction to the source code in the promotion file, the analytics system can answer:
+
+- Which campaign prompted this gift?
+- What program, audience, and package was this donor mailed?
+- How much did that campaign mail, and what did it return?
+
+---
+
+## 3. Source Code Anatomy — Position-by-Position Breakdown
+
+A standard Clearfield source code contains five segments separated by hyphens:
+
+```
+FY25 - RNW - MAR - A01 - PKG2
+  │      │     │     │     │
+  │      │     │     │     └── Segment 5: Package Code
+  │      │     │     └──────── Segment 4: Audience Code
+  │      │     └────────────── Segment 3: Campaign Month Code
+  │      └──────────────────── Segment 2: Program Code
+  └─────────────────────────── Segment 1: Fiscal Year Prefix
+```
+
+| Segment | Position | Format | Length | Example |
+|---|---|---|---|---|
+| Fiscal Year Prefix | 1 | FY + 2-digit year | 4 characters | FY25 |
+| Program Code | 2 | 2–4 uppercase letters | 2–4 characters | RNW |
+| Campaign Month Code | 3 | 3-letter month abbreviation | 3 characters | MAR |
+| Audience Code | 4 | 1 letter + 2 digits | 3 characters | A01 |
+| Package Code | 5 | PKG + digit(s) | 4–5 characters | PKG2 |
+
+---
+
+## 4. Segment 1 — Fiscal Year Prefix
+
+The first segment identifies the fiscal year of the campaign. All source codes for campaigns mailed within the same fiscal year carry the same prefix.
+
+**Format:** `FY` followed by the last two digits of the fiscal year.
+
+| Prefix | Fiscal Year |
+|---|---|
+| FY22 | Fiscal Year 2022 |
+| FY23 | Fiscal Year 2023 |
+| FY24 | Fiscal Year 2024 |
+| FY25 | Fiscal Year 2025 |
+| FY26 | Fiscal Year 2026 |
+
+> **FISCAL YEAR DEFINITION**
+> The fiscal year encoded in the source code reflects the client's defined fiscal year — not the calendar year. A client with a July–June fiscal year will label campaigns mailed in October 2024 as FY25 (because October 2024 falls in their FY25: July 2024–June 2025). Always confirm the client's fiscal year definition before interpreting source code fiscal year values.
+
+---
+
+## 5. Segment 2 — Program Code
+
+The second segment identifies the fundraising program the campaign belongs to. Program codes define the strategic purpose of the mailing.
+
+| Code | Program | Description |
+|---|---|---|
+| ACQ | Acquisition | Mailing to prospect lists to acquire new donors |
+| RNW | Renewal | Mailing to active house donors to solicit their annual renewal gift |
+| CULT | Cultivation | New donor cultivation mailings (typically months 2–12 of first year) |
+| LAP | Lapsed Reactivation | Mailing to donors who gave in a prior fiscal year but not the current year |
+| PRELAP | Pre-Lapsed | Mailing to donors at risk of lapsing before the end of the fiscal year |
+| MGT | Major Gift | Solicitations to major gift prospects or donors |
+| SUST | Sustainer Upgrade | Upgrade asks to active recurring donors |
+
+---
+
+## 6. Segment 3 — Campaign Month Code
+
+The third segment identifies the calendar month in which the mail piece was dropped. Month codes are standard 3-letter abbreviations.
+
+| Code | Month | Code | Month |
+|---|---|---|---|
+| JAN | January | JUL | July |
+| FEB | February | AUG | August |
+| MAR | March | SEP | September |
+| APR | April | OCT | October |
+| MAY | May | NOV | November |
+| JUN | June | DEC | December |
+
+---
+
+## 7. Segment 4 — Audience Code
+
+The fourth segment identifies the audience segment within the program. Audience codes classify the population being mailed.
+
+### Renewal Program Audience Codes
+
+| Code | Audience | Description |
+|---|---|---|
+| A01 | Multi-Year | Donors who have given in the current FY, prior FY, and FY-2 |
+| A02 | Second Year | Donors who gave for the first time in the prior FY and are renewing |
+| A03 | Lapsed Reactivated | Donors who lapsed and have since reactivated |
+| A04 | Single Gift | Donors with only one gift on file, currently active |
+| A05 | High Value | Donors with cumulative giving above a defined threshold |
+
+### Acquisition Program Audience Codes
+
+| Code | Audience | Description |
+|---|---|---|
+| B01 | Cold Prospect — List A | First-time prospect list, vendor A |
+| B02 | Cold Prospect — List B | First-time prospect list, vendor B |
+| B03 | Lapsed Expired | Donors who have not given in 2+ consecutive fiscal years |
+| B04 | Exchange List | Cooperative exchange list prospects |
+
+### Lapsed Reactivation Audience Codes
+
+| Code | Audience | Description |
+|---|---|---|
+| C01 | Recently Lapsed (1 FY) | Donors who gave in FY-2 but not the prior FY or current FY |
+| C02 | Deep Lapsed (2+ FY) | Donors who have not given in 2 or more consecutive fiscal years |
+
+---
+
+## 8. Segment 5 — Package Code
+
+The fifth segment identifies the creative package used in the mailing. Package codes are used for A/B testing and to track response rates by creative variation.
+
+| Code | Package Description |
+|---|---|
+| PKG1 | Control package — established creative with proven response history |
+| PKG2 | Test package A — alternative format or copy variation |
+| PKG3 | Test package B — second alternative variation |
+| PKG4 | Premium package — includes an involvement device or gift item |
+| PKG5 | Dimensional package — non-standard format (oversized, box, etc.) |
+
+---
+
+## 9. Full Source Code Decode Table — Examples
+
+| Source Code | FY | Program | Campaign Month | Audience | Package | Plain Language |
+|---|---|---|---|---|---|---|
+| FY25-RNW-MAR-A01-PKG1 | FY25 | Renewal | March | Multi-Year | Control | FY25 March renewal mailing to multi-year donors, control package |
+| FY25-RNW-MAR-A01-PKG2 | FY25 | Renewal | March | Multi-Year | Test A | FY25 March renewal mailing to multi-year donors, test package A |
+| FY25-RNW-MAR-A02-PKG1 | FY25 | Renewal | March | Second Year | Control | FY25 March renewal mailing to second-year donors, control package |
+| FY25-ACQ-OCT-B01-PKG1 | FY25 | Acquisition | October | Cold Prospect List A | Control | FY25 October acquisition mailing to prospect list A, control package |
+| FY25-LAP-NOV-C01-PKG1 | FY25 | Lapsed Reactivation | November | Recently Lapsed | Control | FY25 November lapsed reactivation to recently lapsed donors |
+| FY25-CULT-FEB-A04-PKG1 | FY25 | Cultivation | February | Single Gift | Control | FY25 February cultivation mailing to new single-gift donors |
+| FY24-RNW-JUN-A05-PKG4 | FY24 | Renewal | June | High Value | Premium | FY24 June renewal to high-value donors, premium package |
+| FY25-PRELAP-AUG-A02-PKG2 | FY25 | Pre-Lapsed | August | Second Year | Test A | FY25 August pre-lapsed mailing to at-risk second-year donors |
+
+---
+
+## 10. Source Code FAQ
+
+**Q: Can a source code appear in both the Promotion File and the Transaction File?**
+Yes — this is the entire basis for campaign attribution. The source code on a promotion record (the mail piece) must match the source code on a gift transaction record for a gift to be attributed to that campaign.
+
+**Q: What happens if a gift has a source code that does not appear in the Source Code Lookup Table?**
+The gift will show as unattributed revenue in the Campaign Performance Report. This usually means the promotion file for that campaign was not processed through the Fax Source Automation workflow, or the source code format on the transaction record does not match the source code format in the promotion file.
+
+**Q: Can the same source code be used across multiple fiscal years?**
+No. The fiscal year prefix (Segment 1) makes every source code unique to a specific fiscal year. Reusing a source code from a prior year would corrupt attribution for both years.
+
+**Q: What does it mean when the audience code is different but all other segments are the same?**
+It means two different audience populations received the same package in the same campaign month. This is standard — a March renewal mailing typically has separate source codes for Multi-Year donors (A01), Second Year donors (A02), and Lapsed Reactivated donors (A03), all with the same FY, program, month, and package.
+
+**Q: What does it mean when the package code is different but all other segments are the same?**
+It means the same audience received two different creative packages in the same campaign. This is an A/B package test. Response rates and revenue are tracked separately by package code to determine which creative performs better.
+
+---
+
+## 11. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | March 2025 | David Ogunfowora | Initial release. Full position-by-position breakdown, lookup tables for all five segments, decode examples, and FAQ. |
+
+---
+
+*FOR INTERNAL USE — STRATEGY TEAMS & ANALYTICS · © 2025 Clearfield Data Solutions*

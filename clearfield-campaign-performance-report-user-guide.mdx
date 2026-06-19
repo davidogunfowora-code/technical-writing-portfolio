@@ -1,0 +1,181 @@
+---
+title: "Campaign Performance Report — User Guide"
+description: "Metric definitions, report structure, source code matching logic, filter reference, and interpretation guide for the Clearfield Campaign Performance Report in Power BI."
+---
+
+# Campaign Performance Report — User Guide
+
+| Field | Value |
+|---|---|
+| **Document Title** | Campaign Performance Report — User Guide |
+| **Document ID** | CDS-RPT-002 |
+| **Version** | 1.3 |
+| **Effective Date** | March 2025 |
+| **Audience** | Strategy Teams · Account Managers · Client-Facing Staff |
+| **Report Location** | Clearfield Analytics Platform · Power BI |
+| **Owner** | Analytics & Reporting Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **First time using this report:** Read Sections 1–3 to understand what the report shows and how campaign data is connected before filtering or interpreting results.
+> **Reading the report:** Section 4 (Metric Definitions) is your primary reference for understanding what each column means.
+> **Interpreting results:** Section 5 (How to Read the Report) walks through the logic for evaluating campaign performance.
+
+---
+
+## Table of Contents
+
+1. Report Purpose
+2. What the Campaign Performance Report Shows
+3. How Campaign Attribution Works
+4. Report Filters
+5. Metric Definitions
+6. How to Read the Report
+7. Common Questions
+8. Document Revision History
+
+---
+
+## 1. Report Purpose
+
+The Campaign Performance Report is the primary tool for evaluating direct mail campaign results at the Clearfield Analytics Platform. It answers the central question of direct mail fundraising: for every campaign we mailed, what did we invest and what did we get back?
+
+The report surfaces KPIs at the campaign and source-code level, enabling strategy teams and account managers to compare performance across programs, identify top and underperforming packages, and make data-driven decisions about future investment.
+
+---
+
+## 2. What the Campaign Performance Report Shows
+
+The Campaign Performance Report is structured as a matrix — one row per source code (or rolled up to campaign level, depending on the current filter settings), with metric columns across the top.
+
+Each row in the report represents one mailing effort: a specific combination of fiscal year, program, campaign, audience segment, and package. The metrics on that row reflect the combined performance of every gift that has been attributed to that mailing effort through source code matching.
+
+### Report Hierarchy
+
+The report can be viewed at three levels of aggregation:
+
+| Level | Description |
+|---|---|
+| **Program Level** | All source codes rolled up by program (Renewal, Acquisition, Lapsed, etc.) |
+| **Campaign Level** | All source codes rolled up by campaign month and program |
+| **Source Code Level** | Individual row per source code — most granular view |
+
+---
+
+## 3. How Campaign Attribution Works
+
+For a gift to appear in the Campaign Performance Report under a specific campaign, two conditions must be met:
+
+1. The gift record in `FACTGIFT` must have a SOURCECODE value.
+2. That SOURCECODE must exist in the Source Code Lookup Table (produced by the Fax Source Automation ETL workflow).
+
+When both conditions are met, the analytics system joins the gift to the campaign record and attributes the revenue to that source code. The gift's amount, date, and donor ID are then used to calculate the KPIs that appear in the report.
+
+> **UNATTRIBUTED REVENUE**
+> Gifts that have a source code not present in the Source Code Lookup Table — or gifts with no source code — will appear in an Unattributed row at the bottom of the report. A small unattributed figure is normal. A large unattributed figure usually indicates that a promotion file has not been processed for the current campaign set.
+
+---
+
+## 4. Report Filters
+
+| Filter | Description |
+|---|---|
+| **Fiscal Year** | Filter to efforts within a given campaign fiscal year. This is a campaign year filter — it shows efforts mailed within that FY, not necessarily gifts received within that FY. |
+| **Program** | Filter to a specific program type: Renewal, Acquisition, Pre-Lapsed, Lapsed Reactivation, Cultivation, Major Gift. |
+| **Channel** | Filter to a specific channel (e.g., Direct Mail, Digital). |
+| **Fiscal Year Qtr.** | Filter to efforts mailed within a specific fiscal year quarter. |
+| **Fiscal Year Month** | Filter to efforts mailed within a specific fiscal year month. |
+| **House/Prospect** | Indicates whether the segments mailed within a given effort were existing House records or outside Prospect records. |
+| **Keep Transactions** | Remove outlier high-dollar gifts that may skew KPI metrics. Options: No Cutoff (all transactions), Less than $5,000, Less than $10,000. |
+| **Active Jobs** | Show only campaigns that are currently within their active response curve (60%+ of expected response received). |
+| **Package Group** | Filter to a specific package group — used when multiple package codes share an overarching theme. |
+
+---
+
+## 5. Metric Definitions
+
+| Metric | Description | Formula |
+|---|---|---|
+| **Mail Qty** | Total number of mail pieces sent under this source code or campaign. Sourced from the Source Code Lookup Table. | Sum of MAIL_QTY |
+| **Gifts** | Total number of gift transactions attributed to this source code or campaign. | Count of GIFTID where SOURCECODE matches |
+| **Donors** | Total number of unique donors who gave in response to this source code or campaign. | Count distinct DONORID |
+| **Revenue** | Total dollar amount of all gifts attributed to this source code or campaign. | Sum of GIFTAMOUNT |
+| **Avg Gift** | Average dollar value per gift. | Revenue ÷ Gifts |
+| **Response Rate (RR%)** | Percentage of mailed records that responded with a gift. | (Gifts ÷ Mail Qty) × 100 |
+| **Cost** | Total cost of the mailing — postage, production, and list costs. Sourced from the budget or plan table. | Sum of COST |
+| **CPP (Cost Per Piece)** | Average cost per mail piece. | Cost ÷ Mail Qty |
+| **Net Revenue** | Revenue after mailing costs are subtracted. | Revenue − Cost |
+| **GPM (Gross per Mailing)** | Revenue per thousand pieces mailed. A standardized efficiency metric that enables comparison across campaigns of different sizes. | (Revenue ÷ Mail Qty) × 1,000 |
+| **Net/M (Net per Thousand)** | Net revenue per thousand pieces mailed. | (Net Revenue ÷ Mail Qty) × 1,000 |
+| **ROI** | Return on investment expressed as a ratio. A value above 1.0x means revenue exceeded cost. | Revenue ÷ Cost |
+
+---
+
+## 6. How to Read the Report
+
+### 6.1 Start at Program Level
+
+When first opening the report, review performance at the Program level before drilling into individual campaigns. This gives you a baseline understanding of where the portfolio is performing overall:
+
+- Which program is generating the most revenue?
+- Which program has the highest response rate?
+- Which program is delivering the best net revenue and ROI?
+
+### 6.2 Identify the Top and Bottom Performers
+
+At the campaign level, sort by Net Revenue to identify which campaigns are delivering the most value after cost. Then sort by GPM to identify which campaigns are most efficient regardless of size.
+
+A campaign with strong Revenue but poor Net Revenue may be over-mailed (high cost) or may be mailing to low-performing audience segments. A campaign with low Revenue but strong GPM may be worth scaling.
+
+### 6.3 Compare Package Performance
+
+When a campaign has multiple source codes (i.e., multiple package tests within the same audience), compare the package codes side by side. Look at:
+
+- **Response Rate (RR%)** — which package prompted more donors to respond?
+- **Average Gift** — which package produced higher gift amounts?
+- **GPM** — which package generated more revenue per piece mailed?
+
+The combination of higher RR% and higher Avg Gift on the same package is the clearest signal for rollout.
+
+### 6.4 Watch Response Curves
+
+Direct mail response does not arrive all at once. Gifts continue to come in for weeks after the mail drop date. When reviewing a campaign that is still in its active response curve, KPIs will be lower than they will be at 90-days-out. Use the **Active Jobs** filter to distinguish between campaigns with mature response data and those still accumulating.
+
+### 6.5 Interpreting Unattributed Revenue
+
+If the Unattributed row represents more than 5–10% of total revenue, flag it for analytics review. Common causes:
+
+- The promotion file for a campaign was not processed through the source code automation workflow
+- Source codes on transaction records do not match the format in the Source Code Lookup Table
+- Gifts were entered manually with non-standard or missing source codes
+
+---
+
+## 7. Common Questions
+
+**Q: Why does the Mail Qty in the report not match what the mail house reported?**
+The Mail Qty in the report is sourced from the Promotion File submitted by the client, not directly from the mail house. Discrepancies typically arise from records excluded during ingestion (null source codes, zero-quantity records) or from timing differences in when data was submitted.
+
+**Q: Can I compare this year's campaign results to last year in the same view?**
+Yes — select multiple fiscal years in the Fiscal Year filter. The report will display rows for all selected years, allowing side-by-side comparison at the campaign or source code level.
+
+**Q: Why are some source codes missing from the report even though I know those campaigns were mailed?**
+The most common reason is that the promotion file for those campaigns has not been processed through the Fax Source Automation ETL workflow. Without processing, there is no entry in the Source Code Lookup Table, and gifts cannot be attributed. Contact your analytics lead to verify workflow status.
+
+**Q: What is the difference between Donors and Gifts?**
+Gifts counts total gift transactions. Donors counts unique individuals who gave. A single donor who gave three times in response to one campaign would appear as 3 Gifts and 1 Donor. For acquisition campaigns, Donors is typically the more meaningful metric because each donor represents a new name added to the file.
+
+---
+
+## 8. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | October 2024 | David Ogunfowora | Initial release. Metric definitions, filter reference, and interpretation guide. |
+| 1.1 | November 2024 | David Ogunfowora | Added GPM and Net/M metric definitions. Expanded How to Read the Report section. |
+| 1.2 | January 2025 | David Ogunfowora | Added Package Group filter definition. Added response curve note to Section 6.4. |
+| 1.3 | March 2025 | David Ogunfowora | Added Unattributed Revenue callout to Section 3. Expanded Common Questions section. |
+
+---
+
+*FOR INTERNAL USE — STRATEGY TEAMS & CLIENT ANALYTICS · © 2025 Clearfield Data Solutions*

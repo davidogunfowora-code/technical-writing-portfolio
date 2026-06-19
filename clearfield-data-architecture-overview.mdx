@@ -1,0 +1,251 @@
+---
+title: "Nonprofit Fundraising Data Architecture Overview"
+description: "End-to-end reference for how direct mail fundraising data systems are structured — from client file ingestion through data warehouse standardization, ETL processing, and Power BI reporting."
+---
+
+# Nonprofit Fundraising Data Architecture Overview
+
+| Field | Value |
+|---|---|
+| **Document Title** | Nonprofit Fundraising Data Architecture Overview |
+| **Document ID** | CDS-REF-001 |
+| **Version** | 1.0 |
+| **Effective Date** | March 2025 |
+| **Audience** | Data Analysts · Strategy Teams · Client Onboarding Staff · Technology Stakeholders |
+| **Owner** | Data Infrastructure Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **New to this environment:** Read Sections 1–3 before anything else.
+> **Analysts and reporting staff:** Reference Section 4 (Architecture Layers) and Section 5 (Data Flow Summary) as needed.
+> **Client onboarding teams:** Section 3 (Core Data File Types) is your primary reference for file structure and PII handling.
+
+> **PORTFOLIO NOTE**
+> This document was created as part of a technical writing portfolio. All organization names, source codes, field values, and data examples used throughout this guide are fictional and created for instructional purposes.
+
+---
+
+## Table of Contents
+
+1. Purpose and Scope
+2. System Overview
+3. Core Data File Types
+4. Architecture Layers — Detailed Description
+5. Data Flow Summary
+6. Key Terms & Definitions
+7. Related Documentation
+8. Document Revision History
+
+---
+
+## 1. Purpose and Scope
+
+This document provides an end-to-end technical overview of how data flows through the Clearfield Analytics Platform — from initial client file submission through data warehouse ingestion, ETL processing, and final report delivery in Power BI.
+
+It is intended to serve as a foundational reference for:
+
+- Data analysts and reporting specialists who are new to the nonprofit fundraising data environment
+- Client onboarding teams who need to understand the full data pipeline when setting up a new client account
+- Strategy and account management teams who want to understand how campaign performance data is produced and how to interpret it
+- Technology stakeholders evaluating or documenting this architecture for audit, compliance, or system integration purposes
+
+> **OUT OF SCOPE**
+> This document covers data architecture and system structure only. Campaign strategy, segmentation methodology, and report interpretation are covered in the companion documents listed in Section 7.
+
+---
+
+## 2. System Overview
+
+The Clearfield Analytics Platform is a multi-layer data system that connects donor identity records, gift transaction history, and campaign mailing information into a unified reporting infrastructure. The system is designed to answer three foundational questions that drive nonprofit fundraising strategy:
+
+- Which campaigns generated revenue, and how much?
+- How are donor segments performing across the lifecycle?
+- Which donors are at risk of lapsing, and which are candidates for upgrade or reactivation?
+
+The architecture consists of five sequential layers: client data sources, data ingestion and standardization, cloud data warehousing, ETL automation, and the reporting layer. Each layer performs a specific transformation — moving raw, client-formatted data progressively closer to decision-ready analytics.
+
+### System Architecture Layers
+
+| Layer | Name | Function |
+|---|---|---|
+| **L1** | Client Data Sources | Nonprofit client CRM — Donor File · Transaction File · Promotion / Mail File |
+| **L2** | Data Ingestion & Standardization | Column naming conventions · PII flagging · Schema normalization · Warehouse ingestion |
+| **L3** | Cloud Data Warehouse (Snowflake) | DIMDONOR · FACTGIFT · FACTPROMOTION · FACTDONORHISTORY · PII_SECURE (Restricted) |
+| **L4** | ETL Processing & Source Code Automation | Deduplication · Source code lookup table generation · PII removal |
+| **L5** | Reporting & Analytics Layer (Power BI) | Campaign Performance · File Trends · Donor Lifecycle / Strategy Pivot · Monthly Sustainers |
+
+> **NOTE**
+> Data flows top to bottom. Each layer depends on the integrity of the layer above it. Data quality issues introduced at Layer 1 (client files) propagate through the entire system if not identified and corrected at ingestion.
+
+---
+
+## 3. Core Data File Types
+
+All reporting in the Clearfield Analytics Platform is built on three core file types submitted by the nonprofit client. Understanding the structure, purpose, and limitations of each file is essential for any analyst, onboarding team member, or account manager working in this environment.
+
+| File Type | Key Fields (Representative) | PII Present? | Notes |
+|---|---|---|---|
+| Donor File | DONORID, FIRSTNAME, LASTNAME, STREETADDRESS, CITY, DONORSTATE, ZIPCODE, DONORTYPE, DONORSTATUS, DECEASEDFLG, BADADDRESSFLG, MONTHLYGIFTIND | Yes — stored in encrypted, access-controlled table | Full file. PII separated from analytical fields at ingestion. Required for acquisition matchback analysis. |
+| Transaction (Gift) File | DONORID, GIFTID, GIFTDATE, GIFTAMOUNT, SOURCECODE, GIFTTYPE, GIFTPAYMENTMETHOD, GIFTRESPONSECHANNEL, RECURRINGGIFTFREQ, FY | Partial — name/address for acquisition transactions only | One row per gift. Source code is the primary campaign attribution key linking gifts to campaigns. |
+| Promotion / Mail File | DONORID, SOURCECODE, MEDIAEVENTDATE, FY, PROGRAM, CAMPAIGN, CAMPAIGNCODE, AUDIENCE, LISTID, LISTSEGMENT, PACKAGE, MAILQUANTITY | Yes — for acquisition/prospect segments only | One row per mailed piece. PII present for acquisition; renewal files use Donor ID only. Foundation for source code lookup table generation. |
+
+> **JOIN KEYS**
+> These three files are referred to collectively as the three-file data model. All reporting, attribution, and lifecycle analysis is derived from joining fields across these files using DONORID and SOURCECODE as the primary join keys. A gift can only be attributed to a campaign when the source code on the transaction record matches a source code in the promotion file.
+
+### 3.1 Donor File
+
+The Donor File is the foundational identity record for a client's donor database. It contains one row per unique constituent and serves as the reference point that links gift transactions and promotion history to individual donors. PII fields are separated at ingestion and routed to the encrypted PII_SECURE table in Snowflake.
+
+> **COMMON ISSUE**
+> The most frequent mapping problem with Donor Files is a mismatch between the DONORID in the Donor File and the DONORID in the Transaction File. Ensure both files use the same identifier format before submission. Clearfield cannot link gift records to donor profiles without a consistent join key.
+
+### 3.2 Transaction (Gift) File
+
+The Transaction File contains the complete giving history for a client's donor base. Each row represents a single gift event. This file is the primary source for all revenue reporting — gift counts, revenue totals, average gift size, and fiscal year performance. The SOURCECODE field on each transaction record is the attribution key that links a gift to the campaign that prompted it.
+
+### 3.3 Promotion / Mail File
+
+The Promotion File records every mail piece sent to donors or prospects during a campaign. It is the foundational record for campaign attribution. Without a complete and accurate Promotion File, campaign attribution reporting is not possible — gifts generated by campaigns missing from the Promotion File will appear as unattributed revenue in the Campaign Performance report.
+
+> **PII NOTE**
+> Acquisition promotion files contain prospect PII (name, address, ZIP) because they include individuals who are not yet in the client's donor database. These fields are required for matchback analysis. PII routing is handled automatically by the Clearfield ingestion pipeline.
+
+---
+
+## 4. Architecture Layers — Detailed Description
+
+### Layer 1: Client Data Sources
+
+Nonprofit fundraising organizations maintain donor and campaign data in a variety of source systems: CRM platforms (Salesforce, Raiser's Edge, EveryAction), fundraising databases, mail house export files, and gift processing systems. Data is submitted to the Clearfield platform on a scheduled basis — typically following each campaign mail event or on a defined periodic cadence.
+
+Common client-side data quality issues include:
+
+- Inconsistent source code formats across fiscal years
+- Missing or misformatted mail dates on promotion files
+- Duplicate rows in transaction files from payment processing retries
+- Non-standard null representations (blank, "N/A", 0) across fields
+- Fiscal year definition differences (calendar year vs. July–June vs. October–September)
+
+### Layer 2: Data Ingestion & Standardization
+
+Before client files enter the data warehouse, they pass through Clearfield's data standardization process. This layer applies a uniform set of transformation rules to every client file submission — producing a consistent, analytics-ready structure regardless of the source format.
+
+This layer performs the following functions:
+
+- **Column renaming** — maps client-specific field names to Clearfield's standard schema
+- **Data type enforcement** — ensures date, numeric, and ID fields conform to expected format
+- **PII identification and flagging** — marks fields containing personally identifiable information for encrypted routing
+- **Schema validation** — confirms required fields are present and populated before warehouse ingestion
+- **Warehouse ingestion** — loads the standardized file into the appropriate Snowflake target table
+
+> **MAPPING DOCUMENTATION**
+> Each client has a unique set of standardization mapping rules documented in a client-level Data Mapping Guide. See Section 7 for the companion Data Mapping Guide in this documentation suite.
+
+### Layer 3: Cloud Data Warehouse (Snowflake)
+
+The Clearfield data warehouse is built on Snowflake. Standardized client data is organized into client-specific schemas, each containing five primary tables:
+
+- **DIMDONOR** — One row per unique donor. Contains non-PII donor attributes: status, type, flags, inception date, and amount.
+- **FACTGIFT** — One row per gift transaction. Contains gift date, amount, source code, gift type, and response channel.
+- **FACTPROMOTION** — One row per donor-per-mailing. Contains source code, mail date, program, campaign, audience, list ID, and package.
+- **FACTDONORHISTORY** — One row per donor per fiscal year for longitudinal history analysis.
+- **PII_SECURE (Restricted)** — Encrypted, access-controlled table containing all PII-flagged fields. Not accessible through standard analytics roles.
+
+> **ACCESS CONTROLS**
+> The warehouse is read-only for most analytical workflows. Data is written only by the ingestion process (Layer 2) or approved ETL outputs (Layer 4). Analysts access data through dedicated service accounts with query-only permissions.
+
+### Layer 4: ETL Processing & Source Code Automation
+
+The ETL layer performs the analytical transformation that bridges the raw warehouse tables and the reporting layer. The Source Code Automation process transforms the raw promotion file into the source code lookup table used by the Campaign Performance report.
+
+This workflow performs the following steps:
+
+- **Extracts** — Pulls the full promotion file for the relevant client and fiscal year from Snowflake
+- **Deduplicates** — Groups records by source code, collapsing many rows into one summary row per code
+- **Strips PII** — Removes all personally identifiable fields from the output
+- **Retains campaign metadata** — Preserves source code, fiscal year, program, campaign, audience, list ID, list segment, panel, and mail quantity
+- **Loads** — Writes the source code lookup table to a staging area accessible to Power BI
+
+> **WHY THIS MATTERS**
+> The source code lookup table is the foundation of the Campaign Performance report. When a donor gives, the source code on the transaction record is matched against this table to retrieve campaign context. If a campaign's promotion file has not been processed, gifts from that campaign will appear as unattributed revenue.
+
+### Layer 5: Reporting & Analytics Layer (Power BI)
+
+Power BI connects to Snowflake and surfaces warehouse data as interactive dashboards and analytical reports. Data models define relationships between DIMDONOR, FACTGIFT, FACTPROMOTION, and the Source Code Lookup tables — enabling cross-table calculations using DAX (Data Analysis Expressions).
+
+The standard report suite includes:
+
+- **Campaign Performance Report** — Revenue, gifts, donors, CPP, net, response rate, and ROI by source code, program, and campaign
+- **File Trends Report (YTD / Rolling 12 / Full Year)** — Longitudinal trends for benchmarking current performance against prior fiscal years
+- **Donor Lifecycle / Strategy Pivot Report** — Segment migration patterns across acquisition, cultivation, multi-year, lapsed, and reactivated
+- **Monthly Sustainers Report** — Recurring donor tracking: active counts, average gift, total recurring revenue, and retention signals
+
+---
+
+## 5. Data Flow Summary
+
+| File Type | Source / Origin | Destination | Primary Use |
+|---|---|---|---|
+| Donor File | Nonprofit client / CRM export | Clearfield Data Warehouse (DIMDONOR) | Donor demographics, status flags, PII storage |
+| Transaction File | Nonprofit client / gift processing system | Clearfield Data Warehouse (FACTGIFT) | Gift history, amounts, source code matching |
+| Promotion / Mail File | Mail house or agency | Data Warehouse → ETL source code table | Campaign attribution, mailing volume, source code encoding |
+| Source Code Lookup Table | ETL automation | Reporting layer (Power BI) | Campaign Results matrix; maps source codes to campaign metadata |
+| Standardized Schema Views | Clearfield Data Infrastructure | Snowflake analytics schema | Unified column names, PII flags, client-agnostic schema for reporting |
+
+> **ONBOARDING NOTE**
+> Not every client activates all five layers simultaneously from day one. Clients with limited historical data or non-standard source code structures may require additional preparation before the full reporting suite can be activated.
+
+---
+
+## 6. Key Terms & Definitions
+
+| Term | Definition |
+|---|---|
+| **Data Warehouse** | A centralized cloud repository (Snowflake) that stores structured, standardized data from multiple source systems for analytics and reporting. |
+| **Data Standardization** | The process of applying uniform column naming conventions, PII flagging, and schema normalization to client files before ingestion — ensuring consistent structure across all client accounts. |
+| **DIMDONOR** | The Snowflake dimension table containing one row per unique donor — non-PII attributes including status, type, flags, inception date, and amount. |
+| **Donor Lifecycle** | A segmentation framework classifying donors by engagement stage: Acquisition → Cultivation → Second Year → Multi-Year → Lapsed → Reactivated → Expired. |
+| **ETL (Extract, Transform, Load)** | A data processing pipeline that extracts data from a source, transforms it (cleaning, deduplication, summarization), and loads the result into a target system. |
+| **FACTDONORHISTORY** | The Snowflake fact table containing one row per donor per fiscal year — inception source code, date, and amount for longitudinal history analysis. |
+| **FACTGIFT** | The Snowflake fact table containing one row per gift transaction — amount, date, source code, gift type, and response channel. |
+| **FACTPROMOTION** | The Snowflake fact table containing one row per donor-per-mailing — source code, mail date, program, campaign, audience, list ID, and package. |
+| **Fiscal Year (FY)** | The 12-month financial reporting period used by a nonprofit client — often differs from the calendar year. Encoded in source codes and used as the primary time dimension in reporting. |
+| **Matchback Analysis** | A post-campaign process that matches gift transactions back to the mailing that prompted them — used to measure true campaign-attributed revenue across both direct and indirect gifts. |
+| **PII (Personally Identifiable Information)** | Data fields that can identify an individual: name, address, email, phone, date of birth. In this architecture, PII is separated from analytical fields and stored in an encrypted, access-controlled table (PII_SECURE). |
+| **PII_SECURE** | The restricted, encrypted Snowflake table where all PII-flagged fields are stored after ingestion. Not accessible through standard analytics roles. |
+| **Power BI** | Microsoft's business intelligence and data visualization platform. Used as the reporting layer to surface campaign performance, donor trends, and lifecycle analytics. |
+| **Snowflake** | A cloud-based data platform used as the analytical data warehouse. Stores standardized client data in structured views accessible to both ETL tools and reporting platforms. |
+| **Source Code** | An alphanumeric identifier assigned to each mailing segment encoding campaign metadata: fiscal year, program, campaign month, audience type, and package. The primary key for campaign attribution. |
+| **Source Code Lookup Table** | A deduplicated, PII-free summary table generated by the ETL process — one row per unique source code, containing campaign metadata fields used to power the Campaign Performance report. |
+| **Sustainer / Recurring Donor** | A donor enrolled in a scheduled recurring gift program (monthly, quarterly, annually). Tracked separately due to predictable revenue patterns and distinct retention metrics. |
+
+---
+
+## 7. Related Documentation
+
+| Document Title | Description | Audience |
+|---|---|---|
+| Data Mapping Guide (CDS-DMG-001) | Schema definitions, column naming conventions, and PII flagging standards for all three core file types. Includes client submission checklist. | Data Analysts · Onboarding Teams |
+| ETL Process Document: Source Code Automation | Step-by-step workflow documentation for the promotion file summarization process — input/output specs, deduplication logic, and source code structure definitions. | Data Engineers · Analysts |
+| Source Code Structure Reference Guide | Decoding guide for campaign attribution source codes with position-by-position field definitions and a lookup table of example values. | Strategy Teams · Analysts |
+| Campaign Performance Report User Guide (CDS-RPT-002) | Metric definitions, matrix structure, filter reference, and interpretation guide for the Campaign Performance Power BI report. | Strategy Teams · Client Staff |
+| Matchback Analysis — Process & Methodology Guide (CDS-ANL-003) | End-to-end methodology guide for running a matchback analysis — when to request one, what information to gather, and how to read the output. | Account Managers · Strategy Teams |
+| Donor Lifecycle Segment Reference Guide (CDS-REF-004) | Lifecycle segment definitions, calculation logic, segment progression scenarios, and KPI benchmarks by segment. | Strategy Teams · Account Managers |
+
+> **READING ORDER**
+> Readers new to the Clearfield Analytics Platform are encouraged to read this Data Architecture Overview before consulting any component-specific guide. The Data Mapping Guide is the recommended second read — it provides the field-level detail that gives context to the architecture described here.
+
+---
+
+## 8. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | March 2025 | David Ogunfowora | Initial release. Full architecture overview covering all five layers, core data file types, glossary, and related documentation suite. |
+
+> **NEED HELP?**
+> For questions about data architecture, file ingestion, or schema structure, contact the Clearfield Data Infrastructure team at data-infrastructure@clearfielddatasolutions.com. For questions about specific reports or analytical outputs, contact your assigned analytics lead or account manager.
+
+---
+
+*FOR INTERNAL USE — DATA INFRASTRUCTURE & CLIENT STRATEGY TEAMS · © 2025 Clearfield Data Solutions*

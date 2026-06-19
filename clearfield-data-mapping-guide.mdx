@@ -1,0 +1,229 @@
+---
+title: "Clearfield Data Mapping Guide"
+description: "Schema definitions, column naming conventions, PII flagging standards, and ingestion requirements for all three core file types in the Clearfield Analytics Platform."
+---
+
+# Clearfield Data Mapping Guide
+
+| Field | Value |
+|---|---|
+| **Document Title** | Clearfield Data Mapping Guide |
+| **Document ID** | CDS-DMG-001 |
+| **Version** | 2.1 |
+| **Effective Date** | March 2025 |
+| **Audience** | Data Analysts · Client Onboarding Teams · Data Engineers |
+| **Owner** | Data Infrastructure Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **New client onboarding:** Begin with Section 2 (Schema Standards) before reviewing the file-specific field tables.
+> **Analysts mapping a new client file:** Use the field tables in Sections 3–5 as your primary reference. Cross-reference the PII flagging standards in Section 6 before submitting any mapping for review.
+> **Data engineers:** Section 7 (Validation Rules) applies at the ingestion layer and must be satisfied before any file is loaded to Snowflake.
+
+> **PORTFOLIO NOTE**
+> This document was created as part of a technical writing portfolio. All field names, data values, client references, and system names are fictional and created for instructional purposes.
+
+---
+
+## Table of Contents
+
+1. Purpose and Scope
+2. Schema Standards — Naming Conventions
+3. Donor File — Field Definitions
+4. Transaction (Gift) File — Field Definitions
+5. Promotion / Mail File — Field Definitions
+6. PII Flagging Standards
+7. Validation Rules & Ingestion Requirements
+8. Client Mapping Checklist
+9. Document Revision History
+
+---
+
+## 1. Purpose and Scope
+
+This guide defines the standard schema used by the Clearfield Analytics Platform for all client data ingestion. Every client submits data in a proprietary format with field names, data types, and structural conventions unique to their source system. This document defines the target schema — the standard field names, data types, and constraints that all client data must conform to before it can be loaded to Snowflake.
+
+The data mapping process translates a client's native field names to the Clearfield standard field names defined in this guide. Each client maintains a client-level mapping document that records the specific translation rules applied to their files. This guide is the master reference that all client mapping documents are built against.
+
+---
+
+## 2. Schema Standards — Naming Conventions
+
+All field names in the Clearfield standard schema follow the conventions below. Client mapping documents must translate all native field names to these conventions before ingestion.
+
+### 2.1 General Naming Rules
+
+- All field names are in `UPPERCASE` with no spaces
+- Multi-word field names use no separator (e.g., `GIFTAMOUNT`, not `GIFT_AMOUNT` or `GiftAmount`)
+- Prefixes identify the table the field belongs to (e.g., `GIFT` for transaction fields, `DONOR` for donor fields)
+- PII fields are identified in the field tables below and routed to `PII_SECURE` at ingestion
+
+### 2.2 Table Prefixes
+
+| Prefix | Table | Description |
+|---|---|---|
+| (none) | DIMDONOR | Donor dimension attributes |
+| GIFT | FACTGIFT | Gift transaction fields |
+| PROMO | FACTPROMOTION | Promotion / mail file fields |
+| DONORHIST | FACTDONORHISTORY | Computed annual history fields |
+
+---
+
+## 3. Donor File — Field Definitions
+
+**Target table:** `DIMDONOR`
+**One row per unique donor. PII fields routed to `PII_SECURE`.**
+
+| Standard Field Name | Data Type | Required? | PII? | Description |
+|---|---|---|---|---|
+| DONORID | VARCHAR | Required | No | Unique donor identifier. Primary join key across all tables. Must match DONORID in Transaction File exactly. |
+| DONORTYPE | VARCHAR | Required | No | Donor classification: Individual, Organization, Foundation, Anonymous. |
+| DONORSTATUS | VARCHAR | Required | No | Current solicitation status: Active, Inactive, Deceased, Do Not Solicit. |
+| DECEASEDFLG | VARCHAR | Required | No | Deceased flag: Y or N. |
+| BADADDRESSFLG | VARCHAR | Required | No | Bad address flag: Y or N. Used to suppress mail. |
+| MONTHLYGIFTIND | VARCHAR | Required | No | Monthly (sustainer) gift indicator: Y or N. |
+| MEMBERSHIPSTATUS | VARCHAR | Optional | No | Membership or subscription status if applicable. |
+| MEMBERSHIPTYPE | VARCHAR | Optional | No | Membership tier or category. |
+| SOLICITMAILFLG | VARCHAR | Required | No | Active mail solicitation flag: Y or N. |
+| SOLICITONLINEFLG | VARCHAR | Optional | No | Active online solicitation flag: Y or N. |
+| INCEPTIONDATE | DATE | Required | No | Date of first gift on file. Used as lifecycle segment base. Format: YYYY-MM-DD. |
+| INCEPTIONAMOUNT | DECIMAL(10,2) | Required | No | Dollar amount of first gift on file. |
+| FIRSTSOURCECODE | VARCHAR | Required | No | Source code of first gift on file. Primary acquisition attribution key. |
+| DONORSTATE | VARCHAR | Required | No | Donor state of residence (2-letter abbreviation). |
+| EMAILIND | VARCHAR | Optional | No | Email solicitation indicator: Y or N. |
+| FIRSTNAME | VARCHAR | Required | **YES — PII_SECURE** | Donor first name. Separated at ingestion. |
+| LASTNAME | VARCHAR | Required | **YES — PII_SECURE** | Donor last name. Separated at ingestion. |
+| STREETADDRESS | VARCHAR | Required | **YES — PII_SECURE** | Street address line 1. |
+| STREETADDRESS2 | VARCHAR | Optional | **YES — PII_SECURE** | Street address line 2 (apt, suite, etc.). |
+| CITY | VARCHAR | Required | **YES — PII_SECURE** | City of residence. |
+| ZIPCODE | VARCHAR | Required | **YES — PII_SECURE** | 5-digit ZIP code. Used for matchback and geo-segmentation. |
+| EMAILADDRESS | VARCHAR | Optional | **YES — PII_SECURE** | Primary email address. |
+| PHONE | VARCHAR | Optional | **YES — PII_SECURE** | Primary phone number. |
+
+> **DONORID ALIGNMENT**
+> DONORID must be identical in format across the Donor File, Transaction File, and Promotion File. Mixed formats (e.g., integer in one file, padded string in another) will cause join failures and result in unmatched gift and promotion records. Verify format consistency before submitting files.
+
+---
+
+## 4. Transaction (Gift) File — Field Definitions
+
+**Target table:** `FACTGIFT`
+**One row per gift transaction.**
+
+| Standard Field Name | Data Type | Required? | PII? | Description |
+|---|---|---|---|---|
+| GIFTID | VARCHAR | Required | No | Unique gift/transaction identifier. Deduplication key. |
+| DONORID | VARCHAR | Required | No | Donor identifier. Foreign key to DIMDONOR. Must match format exactly. |
+| GIFTDATE | DATE | Required | No | Date gift was received. Format: YYYY-MM-DD. Used for FY assignment and trend analysis. |
+| GIFTAMOUNT | DECIMAL(10,2) | Required | No | Dollar value of gift. Core revenue metric. |
+| SOURCECODE | VARCHAR | Required | No | Campaign attribution source code. Primary join key to Source Code Lookup Table. |
+| GIFTTYPE | VARCHAR | Required | No | Payment method: Check, Credit Card, EFT, PayPal, Pledge, Stock, Other. |
+| GIFTRESPONSECHANNEL | VARCHAR | Required | No | Response channel: Mail, Online, Phone, Walk-in, Other. Used for matchback attribution. |
+| RECURRINGGIFTFREQ | VARCHAR | Required | No | Recurring gift frequency: Monthly, Quarterly, Annually, One-Time, None. |
+| GIFTPAYMENTMETHOD | VARCHAR | Optional | No | Specific payment method detail (e.g., Visa, MasterCard, ACH). |
+| PLEDGETYPE | VARCHAR | Optional | No | If gift type is Pledge: pledge details or installment plan. |
+| RECURRINGGIFTSTATUS | VARCHAR | Optional | No | Active sustainer status: Active, Cancelled, Suspended. |
+| RECURRINGGIFTSTART | DATE | Optional | No | Date recurring gift program began. Format: YYYY-MM-DD. |
+| RECURRINGGIFTEND | DATE | Optional | No | Date recurring gift cancelled or ended. Format: YYYY-MM-DD. |
+| FY | INTEGER | Computed | No | Fiscal year of gift. Computed from GIFTDATE and client FY definition at ingestion. |
+
+> **SOURCE CODE INTEGRITY**
+> A gift without a valid SOURCECODE cannot be attributed to any campaign and will appear as unattributed revenue in the Campaign Performance report. Source codes must match the format defined in the Source Code Structure Reference Guide exactly — including case, spacing, and delimiters.
+
+---
+
+## 5. Promotion / Mail File — Field Definitions
+
+**Target table:** `FACTPROMOTION`
+**One row per donor/prospect per mailing.**
+
+| Standard Field Name | Data Type | Required? | PII? | Description |
+|---|---|---|---|---|
+| PROMOID | VARCHAR | Required | No | Unique promotion record identifier. Deduplication key. |
+| DONORID | VARCHAR | Required | No | Donor or prospect identifier. Foreign key to DIMDONOR. |
+| SOURCECODE | VARCHAR | Required | No | Source code mailed to this record. Primary campaign attribution key. |
+| MEDIAEVENTDATE | DATE | Required | No | Date the mail piece was dropped (in-home date or mail date). Format: YYYY-MM-DD. |
+| FY | INTEGER | Required | No | Fiscal year of the campaign. Must match the FY encoded in the source code. |
+| PROGRAM | VARCHAR | Required | No | Fundraising program: Renewal, Acquisition, PreLapsed, Lapsed Reactivation, Cultivation, Major Gift. |
+| CAMPAIGN | VARCHAR | Required | No | Campaign name or description. |
+| CAMPAIGNCODE | VARCHAR | Required | No | Short campaign identifier code (e.g., MAR for March renewal campaign). |
+| AUDIENCE | VARCHAR | Required | No | Audience segment code. Identifies the donor population being mailed. |
+| LISTID | VARCHAR | Required | No | List or house segment identifier. |
+| LISTSEGMENT | VARCHAR | Optional | No | Detailed list segment within the list ID. |
+| PANEL | VARCHAR | Optional | No | Test panel designation (e.g., A, B, Control). |
+| PACKAGE | VARCHAR | Required | No | Creative package code. Used for package test analysis. |
+| MAILQUANTITY | INTEGER | Required | No | Number of records mailed under this source code. |
+| HOUSEPROSPECT | VARCHAR | Required | No | Indicates whether records are House donors or Prospect (outside list) records. |
+| FIRSTNAME | VARCHAR | Conditional | **YES — PII_SECURE (ACQ only)** | First name for acquisition/prospect files. Required for matchback. |
+| LASTNAME | VARCHAR | Conditional | **YES — PII_SECURE (ACQ only)** | Last name for acquisition/prospect files. Required for matchback. |
+| STREETADDRESS | VARCHAR | Conditional | **YES — PII_SECURE (ACQ only)** | Street address for acquisition/prospect files. Required for matchback. |
+| CITY | VARCHAR | Conditional | **YES — PII_SECURE (ACQ only)** | City for acquisition/prospect files. |
+| ZIPCODE | VARCHAR | Conditional | **YES — PII_SECURE (ACQ only)** | ZIP code for acquisition/prospect files. Required for matchback. |
+
+---
+
+## 6. PII Flagging Standards
+
+All fields marked **YES — PII_SECURE** in the field tables above are subject to the following handling rules:
+
+1. **PII fields are never stored in the analytics tables** (DIMDONOR, FACTGIFT, FACTPROMOTION). They exist in the source file for ingestion processing only.
+2. **At ingestion**, all PII fields are extracted from the source file and written exclusively to the `PII_SECURE` table in Snowflake.
+3. **PII_SECURE is encrypted at rest** and access is restricted to authorized roles only. Standard analytics service accounts do not have access to PII_SECURE.
+4. **DONORID is the only link** between PII_SECURE and the analytics tables. No other PII field is present in any analytics table.
+5. **Acquisition files** (Promotion Files containing prospect records not yet in the client's donor database) contain PII because matchback analysis requires name-and-address matching. This PII is still routed to PII_SECURE at ingestion.
+
+| PII Field | Present In | Reason |
+|---|---|---|
+| FIRSTNAME, LASTNAME | Donor File, Promotion File (ACQ) | Identity record, matchback |
+| STREETADDRESS, CITY, ZIPCODE | Donor File, Promotion File (ACQ) | Mail delivery, matchback analysis |
+| EMAILADDRESS | Donor File | Email solicitation, digital attribution |
+| PHONE | Donor File | Phone solicitation |
+
+---
+
+## 7. Validation Rules & Ingestion Requirements
+
+All files must pass the following validation checks before ingestion. Files failing any Required validation will be rejected and returned to the submitting team.
+
+| Rule | Applies To | Required? | Description |
+|---|---|---|---|
+| DONORID format consistency | All three files | Required | DONORID must be the same format (length, type, padding) across Donor, Transaction, and Promotion files. |
+| No null DONORID | All three files | Required | No record may have a null or blank DONORID. Records with null DONORID will be rejected. |
+| No null SOURCECODE | Transaction File, Promotion File | Required | SOURCECODE must be present on every row. Null source codes cannot be attributed. |
+| GIFTDATE format | Transaction File | Required | All dates in YYYY-MM-DD format. Mixed formats will cause ingestion failure. |
+| MEDIAEVENTDATE present | Promotion File | Required | Every promotion record must have a mail date. Records without mail dates cannot establish a response window. |
+| FY consistency | Promotion File | Required | The FY field must match the fiscal year encoded in the SOURCECODE for that record. |
+| MAILQUANTITY > 0 | Promotion File | Required | Mail quantity must be a positive integer. Zero or negative values indicate a data error. |
+| No duplicate GIFTID | Transaction File | Required | GIFTID must be unique across all transaction records for a given client. |
+| No duplicate PROMOID | Promotion File | Required | PROMOID must be unique per promotion record submission. |
+| PII fields present for ACQ | Promotion File (ACQ) | Required for matchback | Acquisition promotion files must include FIRSTNAME, LASTNAME, STREETADDRESS, and ZIPCODE for matchback analysis. |
+
+---
+
+## 8. Client Mapping Checklist
+
+Before submitting a new client mapping document for review, confirm that all items below are complete.
+
+- [ ] All three file types (Donor, Transaction, Promotion) have been reviewed against the field tables in Sections 3–5
+- [ ] Every required field has a mapping from the client's native field name to the Clearfield standard field name
+- [ ] DONORID format has been confirmed consistent across all three files
+- [ ] All PII fields have been identified and marked for PII_SECURE routing
+- [ ] Date fields have been confirmed in YYYY-MM-DD format (or a conversion has been specified)
+- [ ] SOURCECODE format has been validated against the Source Code Structure Reference Guide
+- [ ] Fiscal year definition for this client has been documented and applied to FY field calculation logic
+- [ ] Validation rules in Section 7 have been reviewed and confirmed against a sample file
+- [ ] Any fields that do not have a direct mapping have been documented with a transformation rule or flagged for analytics team review
+
+---
+
+## 9. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | October 2024 | David Ogunfowora | Initial release. Full field definitions for all three file types, PII flagging standards, and validation rules. |
+| 2.0 | January 2025 | David Ogunfowora | Added RECURRINGGIFTSTATUS, RECURRINGGIFTSTART, and RECURRINGGIFTEND fields to Transaction File. Added PANEL field to Promotion File. Expanded validation rules table. |
+| 2.1 | March 2025 | David Ogunfowora | Added client mapping checklist (Section 8). Minor clarifications to PII flagging standards. |
+
+---
+
+*FOR INTERNAL USE — DATA INFRASTRUCTURE & CLIENT ONBOARDING TEAMS · © 2025 Clearfield Data Solutions*

@@ -1,0 +1,208 @@
+---
+title: "Matchback Analysis — Process & Methodology Guide"
+description: "End-to-end methodology guide for requesting, running, and interpreting a matchback analysis — including data requirements, response window logic, attribution rules, and output interpretation."
+---
+
+# Matchback Analysis — Process & Methodology Guide
+
+| Field | Value |
+|---|---|
+| **Document Title** | Matchback Analysis — Process & Methodology Guide |
+| **Document ID** | CDS-ANL-003 |
+| **Version** | 1.1 |
+| **Effective Date** | March 2025 |
+| **Audience** | Account Managers · Strategy Teams |
+| **Owner** | Analytics & Reporting Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **Preparing to request a matchback:** Read Section 3 (What You Need) before contacting the analytics team.
+> **Understanding the methodology:** Section 4 (How Matchback Works) explains the attribution logic.
+> **Reading the output:** Section 6 (Reading the Matchback Report) walks through how to interpret the results.
+
+---
+
+## Table of Contents
+
+1. What Is a Matchback Analysis?
+2. When to Request a Matchback
+3. What You Need Before Requesting
+4. How Matchback Works — The Methodology
+5. Response Window — Definition and Configuration
+6. Reading the Matchback Report
+7. Matchback vs. Campaign Performance Report — Key Differences
+8. Frequently Asked Questions
+9. Document Revision History
+
+---
+
+## 1. What Is a Matchback Analysis?
+
+A matchback analysis is a post-campaign process that attributes gift revenue back to the specific direct mail piece that prompted the donation. It is the most complete measure of direct mail campaign performance available — because it captures not just gifts where the donor returned the reply device, but also gifts that arrived online, by phone, or through any other channel in the days and weeks following a mail drop.
+
+The Campaign Performance Report shows attributed revenue — revenue from donors who responded with the source code from the mail piece. The matchback goes further: it finds donors who were mailed a piece, and who then made a gift through any channel within a defined response window, regardless of whether they used the reply device.
+
+---
+
+## 2. When to Request a Matchback
+
+A matchback is appropriate when:
+
+- A campaign has completed its full response window and you want to see total influence including non-source-coded responses
+- The client has a significant online giving program and you want to understand mail's role in driving digital donations
+- Response rates in the Campaign Performance Report appear lower than expected and you suspect soft channel attribution
+- You are presenting an annual program review and want to show true campaign influence on total revenue
+
+> **MATCHBACK IS NOT A SUBSTITUTE FOR THE CAMPAIGN PERFORMANCE REPORT**
+> The Campaign Performance Report is the standard for campaign-level KPIs and should be the primary reference for day-to-day reporting. A matchback is a deeper analytical exercise typically run 90–120 days after a campaign mail drop, when the response window has closed.
+
+---
+
+## 3. What You Need Before Requesting
+
+Before submitting a matchback request to the analytics team, confirm all items below are available:
+
+| Information Required | Required? | Notes |
+|---|---|---|
+| Client name and fiscal year | Required | Specifies the scope of the matchback |
+| Campaign list to include | Required | Specific source codes or campaigns to match against |
+| Mail drop date(s) for each campaign | Required | Required to define the response window start date |
+| Response window length | Required | Standard is 90 days from mail drop; client may define a different window |
+| Channel scope | Required | Which channels to include: Mail reply, Online, Phone, all channels |
+| Gift file date range | Required | Transaction data must cover the full response window for all campaigns |
+| Donor file as of matchback date | Required | Needed to confirm which donors were mailed and which gave |
+| Large gift exclusion threshold | Optional | Specify a dollar threshold if major gifts should be excluded from KPIs |
+
+> **TURNAROUND TIME**
+> Standard matchback turnaround is 5–7 business days from receipt of a complete request. Requests missing campaign lists, mail dates, or response window definitions will be returned. A complete request is the fastest path to output.
+
+---
+
+## 4. How Matchback Works — The Methodology
+
+### Step 1: Identify the Mailed Universe
+
+The matchback begins by identifying every donor or prospect record that received a mail piece during the specified campaign set. This universe is pulled from `FACTPROMOTION` filtered to the target source codes and fiscal year.
+
+**Output:** A unique list of DONORIDs that were mailed, with their associated source code and mail date.
+
+### Step 2: Identify Gifts Within the Response Window
+
+For each donor in the mailed universe, the matchback identifies all gift transactions in `FACTGIFT` that fall within the response window (mail date + defined number of days).
+
+**Rule:** A gift is included in the matchback if:
+- The DONORID appears in the mailed universe
+- The GIFTDATE is on or after the mail drop date for that donor's source code
+- The GIFTDATE is on or before the mail drop date + response window length
+
+### Step 3: Attribute Gifts to Source Codes
+
+Each gift identified in Step 2 is attributed to the source code the donor was mailed. If a donor was mailed more than one source code within the matchback window:
+
+- **Priority rule:** The source code with the most recent mail date before the gift date takes priority
+- **Tie-breaker:** If two source codes have the same mail date, the source code with the higher mail quantity is used
+
+### Step 4: Calculate Matchback KPIs
+
+Attributed gifts are aggregated by source code to produce the matchback output. KPIs include:
+
+| KPI | Description |
+|---|---|
+| **Matchback Gifts** | Total gifts attributed to each source code through the matchback process |
+| **Matchback Revenue** | Total dollar amount of matchback-attributed gifts |
+| **Matchback Donors** | Unique donors attributed through the matchback |
+| **Matchback RR%** | Matchback gifts as a percentage of mail quantity |
+| **Direct Response Revenue** | Revenue from gifts where the donor used the source code (reply device attribution) |
+| **Soft Channel Revenue** | Revenue from gifts through non-source-coded channels (online, phone) attributed through the matchback |
+| **Total Influence Revenue** | Direct Response Revenue + Soft Channel Revenue |
+
+---
+
+## 5. Response Window — Definition and Configuration
+
+The response window is the number of days after a mail drop date during which a gift is eligible to be attributed to that mailing. The window must be defined before the matchback is run.
+
+### Standard Response Windows
+
+| Program | Standard Window | Rationale |
+|---|---|---|
+| Renewal | 90 days | Renewal campaigns have long response curves; 90 days captures ~95% of expected response |
+| Acquisition | 60 days | Acquisition response curves are shorter; new donors typically respond within 60 days |
+| Lapsed Reactivation | 90 days | Lapsed donors may take longer to respond; 90-day window recommended |
+| Pre-Lapsed | 45 days | Pre-lapsed campaigns are time-sensitive; shorter window appropriate |
+| Major Gift | 120 days | Major gift cultivation has the longest response curves |
+
+> **CLIENT-SPECIFIC WINDOWS**
+> The standard windows above are defaults. A client may define a different response window based on their giving patterns and reporting preferences. The configured window must be documented in the matchback request and applied consistently across all campaigns in the analysis.
+
+---
+
+## 6. Reading the Matchback Report
+
+The matchback output is a table with one row per source code, presenting both direct response (reply device) and soft channel (matchback-attributed) performance side by side.
+
+### Column Definitions
+
+| Column | Description |
+|---|---|
+| Source Code | The campaign source code |
+| Mail Qty | Total records mailed under this source code |
+| Direct Gifts | Gifts received with this source code on the transaction record |
+| Direct Revenue | Revenue from direct-coded gifts |
+| Direct RR% | Direct gifts ÷ Mail Qty × 100 |
+| Matchback Gifts | Additional gifts attributed through the matchback process (soft channel) |
+| Matchback Revenue | Revenue from matchback-attributed gifts |
+| Total Gifts | Direct Gifts + Matchback Gifts |
+| Total Revenue | Direct Revenue + Matchback Revenue |
+| Total RR% | Total Gifts ÷ Mail Qty × 100 |
+| Lift | Difference between Total Revenue and Direct Revenue — the value added by the matchback |
+| Lift % | Matchback Revenue ÷ Direct Revenue × 100 — percentage increase attributable to soft channel |
+
+### Interpreting Lift
+
+Lift is the key matchback metric. It tells you how much additional revenue mail influenced beyond what showed up on the reply device.
+
+- A **Lift % above 15–20%** indicates a strong digital giving component — donors received the mail piece and gave online rather than returning the reply device. This is common in clients with robust email and online programs.
+- A **Lift % below 5%** indicates that almost all giving is captured in the source code on the reply device. This is typical of older donor files with lower digital engagement.
+- A **very high Lift % (above 50%)** may indicate a response window that is too wide, capturing gifts that were not actually prompted by the mailing. Review response window configuration.
+
+---
+
+## 7. Matchback vs. Campaign Performance Report — Key Differences
+
+| Factor | Campaign Performance Report | Matchback Analysis |
+|---|---|---|
+| Attribution method | Source code on the gift transaction | DONORID match within a response window |
+| Channels captured | Only channel where donor used source code | All channels — mail reply, online, phone |
+| Typical timing | Updated continuously as gifts arrive | Run once at campaign close (90+ days post-mail) |
+| Revenue shown | Direct-coded revenue only | Total influence revenue including soft channel |
+| Use case | Day-to-day campaign tracking | Deep post-campaign evaluation and annual reviews |
+
+---
+
+## 8. Frequently Asked Questions
+
+**Q: Does the matchback double-count gifts that already appear in the Campaign Performance Report?**
+No. The matchback output distinguishes between Direct gifts (those with a source code on the transaction record, already in the Campaign Performance Report) and Matchback gifts (soft-channel gifts attributed through the DONORID match). Total Revenue in the matchback adds these together — it does not duplicate them.
+
+**Q: What if a donor was mailed two different campaigns in the same window?**
+The priority rule described in Section 4, Step 3 applies: the most recent mail drop date before the gift date takes priority. If two campaigns have the same mail date, mail quantity is the tie-breaker.
+
+**Q: Should we use matchback revenue or direct revenue when reporting to the client?**
+This depends on the context. For standard campaign reporting, use Direct Revenue from the Campaign Performance Report. When presenting the full impact of mail on the giving program — especially to demonstrate mail's role in driving online gifts — use Total Influence Revenue from the matchback with clear labeling.
+
+**Q: How far back can we run a matchback?**
+As long as both the promotion file and transaction data are available in Snowflake, a matchback can be run for any prior campaign period. Data is retained indefinitely unless a client-specific purge has occurred.
+
+---
+
+## 9. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | November 2024 | David Ogunfowora | Initial release. Full methodology, response window configuration, and output interpretation guide. |
+| 1.1 | March 2025 | David Ogunfowora | Added Matchback vs. Campaign Performance Report comparison table (Section 7). Expanded FAQ section. |
+
+---
+
+*FOR INTERNAL USE — ACCOUNT MANAGEMENT & STRATEGY TEAMS · © 2025 Clearfield Data Solutions*

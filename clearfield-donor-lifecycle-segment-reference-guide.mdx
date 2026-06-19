@@ -1,0 +1,260 @@
+---
+title: "Donor Lifecycle Segment Reference Guide"
+description: "Lifecycle segment definitions, classification logic, segment progression scenarios, and KPI benchmarks for all seven donor segments in the Clearfield fundraising data model."
+---
+
+# Donor Lifecycle Segment Reference Guide
+
+| Field | Value |
+|---|---|
+| **Document Title** | Donor Lifecycle Segment Reference Guide |
+| **Document ID** | CDS-REF-004 |
+| **Version** | 1.0 |
+| **Effective Date** | March 2025 |
+| **Audience** | Strategy Teams · Account Managers · Client Advisory Teams |
+| **Owner** | Analytics & Reporting Division · Clearfield Data Solutions |
+| **Status** | Active |
+
+> **HOW TO USE**
+> **Understanding segments:** Read Section 2 (The Lifecycle Framework) for the classification rules before reviewing individual segment definitions.
+> **Interpreting reports:** Section 5 (How Segments Are Used in Reporting) connects segment definitions to the reports where they appear.
+> **Strategic application:** Section 6 (KPI Benchmarks by Segment) provides the performance expectations by segment used in program evaluation.
+
+---
+
+## Table of Contents
+
+1. Purpose and Overview
+2. The Lifecycle Framework — Classification Logic
+3. Segment Definitions
+4. Segment Progression Scenarios
+5. How Segments Are Used in Reporting
+6. KPI Benchmarks by Segment
+7. Frequently Asked Questions
+8. Document Revision History
+
+---
+
+## 1. Purpose and Overview
+
+The donor lifecycle is a classification framework that assigns every donor in a client's file to one of seven segments based on their giving history relative to the current fiscal year. The segment a donor occupies determines which mailing program they receive, how they are counted in retention metrics, and how their value is benchmarked against the rest of the file.
+
+This guide defines each lifecycle segment, documents the exact classification logic, describes how donors move between segments, and provides KPI benchmarks for program evaluation.
+
+> **PORTFOLIO NOTE**
+> This document was created as part of a technical writing portfolio. All segment values, benchmarks, and examples are fictional and created for instructional purposes.
+
+---
+
+## 2. The Lifecycle Framework — Classification Logic
+
+Lifecycle segments are assigned at the fiscal-year level. Every donor receives a segment assignment for every fiscal year they appear in the data. The segment assignment for a given fiscal year is determined by comparing the donor's giving history across three consecutive fiscal years: the current FY, the prior FY (FY-1), and two years prior (FY-2).
+
+### Classification Rules
+
+| Segment | Gave Current FY? | Gave Prior FY (FY-1)? | Gave FY-2? | Prior Gift on File? |
+|---|---|---|---|---|
+| **New** | YES | NO | NO | NO |
+| **2nd Year** | YES | YES (as New) | NO | — |
+| **Multi-Year** | YES | YES | YES | — |
+| **2nd Year Reactivated** | YES | YES (as Reactivated) | NO | — |
+| **Reactivated** | YES | NO | — | YES |
+| **Lapsed** | NO | YES | — | — |
+| **Expired** | NO | NO | — | YES (2+ FY ago) |
+
+### How to Read This Table
+
+- **New:** Gave for the first time in the current fiscal year. No prior giving history on file.
+- **2nd Year:** Gave in the current FY and was a New donor in the prior FY.
+- **Multi-Year:** Gave in the current FY, the prior FY, and FY-2 — at least three consecutive years.
+- **2nd Year Reactivated:** Gave in the current FY and was classified as Reactivated in the prior FY.
+- **Reactivated:** Has a prior gift on file but did not give in the prior FY — and gave again in the current FY.
+- **Lapsed:** Gave in the prior FY but has not given in the current FY.
+- **Expired:** Has a prior gift on file but has not given in two or more consecutive fiscal years.
+
+---
+
+## 3. Segment Definitions
+
+### New
+
+**Definition:** A donor who made their first-ever gift in the current fiscal year. No previous gift exists on the donor file before this fiscal year.
+
+**Mailing program:** Cultivation / New Donor program. New donors receive a series of mailings focused on relationship building, mission communication, and second-gift solicitation rather than a direct hard ask.
+
+**Strategic note:** The New segment is the most critical segment for long-term file health. The transition rate from New to 2nd Year (second-year retention) is the most closely watched metric in the program. Industry average is 25–40%. Programs above 40% are performing well.
+
+---
+
+### 2nd Year
+
+**Definition:** A donor who gave in the current fiscal year and was classified as New in the prior fiscal year. This is their second consecutive year of giving.
+
+**Mailing program:** Renewal program. Second-year donors graduate from the cultivation series into the standard renewal program.
+
+**Strategic note:** Second-year donors have survived the highest-attrition point in the donor lifecycle. Their upgrade potential (giving more than their New gift) and their likelihood of becoming Multi-Year donors are the key metrics to track.
+
+---
+
+### Multi-Year
+
+**Definition:** A donor who gave in the current fiscal year, the prior fiscal year, and at least one year prior to that (FY-2 or earlier). These are the most loyal donors in the file.
+
+**Mailing program:** Renewal program. Multi-year donors receive the full renewal mailing series, often with premium packages or upgrade asks.
+
+**Strategic note:** Multi-year donors typically represent 25–35% of the active file by count but 45–60% of total annual revenue. Protecting this segment's retention rate is the single highest-leverage action in any fundraising program.
+
+---
+
+### 2nd Year Reactivated
+
+**Definition:** A donor who gave in the current fiscal year and was classified as Reactivated in the prior fiscal year. This is their second consecutive year of giving following a lapse.
+
+**Mailing program:** Renewal program. Like standard second-year donors, this segment transitions from the reactivation program to the renewal program.
+
+**Strategic note:** 2nd Year Reactivated donors have a lower retention rate than standard 2nd Year donors — they have already lapsed once. Monitor their upgrade and retention rates separately.
+
+---
+
+### Reactivated
+
+**Definition:** A donor who has a prior gift on file, did not give in the prior fiscal year, and gave again in the current fiscal year — returning after at least one year of lapsing.
+
+**Mailing program:** Lapsed Reactivation program. Reactivated donors are mailed through the lapsed program until they demonstrate consecutive-year retention.
+
+**Strategic note:** Reactivated donors are high-value recoveries. Their average gift upon reactivation is often higher than their last pre-lapse gift, and they are more engaged than deeply expired donors.
+
+---
+
+### Lapsed
+
+**Definition:** A donor who gave in the prior fiscal year but has not given in the current fiscal year. They have lapsed for one year.
+
+**Mailing program:** Pre-Lapsed / Lapsed Reactivation program. Lapsed donors receive targeted reactivation appeals.
+
+**Strategic note:** Recently lapsed donors (one year) have the highest reactivation rate of any lapsed group. The window for reactivation tightens significantly after two consecutive years of non-giving.
+
+---
+
+### Expired
+
+**Definition:** A donor who has a prior gift on file but has not given in two or more consecutive fiscal years. Also referred to as deeply lapsed.
+
+**Mailing program:** Deep Lapsed / Winback program. Expired donors receive lower-frequency mailings with more aggressive ask amounts and strong urgency messaging.
+
+**Strategic note:** Expired donors are expensive to reactivate relative to their initial reactivation gift. Reactivation cost-per-donor should be evaluated against the lifetime value of a reactivated donor before scaling expired outreach.
+
+---
+
+## 4. Segment Progression Scenarios
+
+The following examples trace four fictional donors across five fiscal years to illustrate how segment assignments change over time.
+
+### Scenario 1: Strong Retention
+
+| Fiscal Year | Gave? | Segment |
+|---|---|---|
+| FY21 | Yes | New |
+| FY22 | Yes | 2nd Year |
+| FY23 | Yes | Multi-Year |
+| FY24 | Yes | Multi-Year |
+| FY25 | Yes | Multi-Year |
+
+This donor converted from New to 2nd Year to Multi-Year and has remained in Multi-Year for three consecutive years. This is the ideal trajectory.
+
+### Scenario 2: One-Year Lapse Then Return
+
+| Fiscal Year | Gave? | Segment |
+|---|---|---|
+| FY21 | Yes | New |
+| FY22 | No | Lapsed |
+| FY23 | Yes | Reactivated |
+| FY24 | Yes | 2nd Year Reactivated |
+| FY25 | Yes | Multi-Year |
+
+This donor lapsed after their New year, was reactivated, retained for a second year, and is now Multi-Year. Reactivation programs made a difference.
+
+### Scenario 3: Lapse to Expiry
+
+| Fiscal Year | Gave? | Segment |
+|---|---|---|
+| FY21 | Yes | New |
+| FY22 | No | Lapsed |
+| FY23 | No | Expired |
+| FY24 | No | Expired |
+| FY25 | Yes | Reactivated |
+
+This donor lapsed immediately after their New year and expired. They were eventually reactivated in FY25 — demonstrating the value of maintaining expired outreach even after multiple years of non-response.
+
+### Scenario 4: Multi-Year Then Permanent Lapse
+
+| Fiscal Year | Gave? | Segment |
+|---|---|---|
+| FY21 | Yes | New |
+| FY22 | Yes | 2nd Year |
+| FY23 | Yes | Multi-Year |
+| FY24 | No | Lapsed |
+| FY25 | No | Expired |
+
+This donor had a strong three-year trajectory before lapsing. The transition from Multi-Year to Lapsed in FY24 is a significant event and would trigger review of whether this donor's file is accurate (deceased, moved) and whether a targeted winback is appropriate.
+
+---
+
+## 5. How Segments Are Used in Reporting
+
+### Strategy Pivot Report
+
+The Strategy Pivot Report in Power BI displays donor counts, revenue, and retention rates by lifecycle segment for the current fiscal year. It answers:
+
+- How many donors are in each segment, and how does that compare to prior years?
+- What is the retention rate from each segment to the next?
+- Which segments are growing and which are declining?
+
+### Campaign Performance Report
+
+Lifecycle segments are used to define the **Audience Code** in source codes (see Source Code Structure Reference Guide). When a campaign is built for the Multi-Year audience, all records in that mailing carry an audience code that corresponds to Multi-Year. This allows performance to be analyzed not just by campaign, but by the segment being mailed.
+
+---
+
+## 6. KPI Benchmarks by Segment
+
+| Segment | Retention Rate | Avg Gift | Revenue Concentration | Retention Priority |
+|---|---|---|---|---|
+| New | 25–40% (to 2nd Year) | $35–$55 | 8–12% of total revenue | Very High |
+| 2nd Year | 55–65% (to Multi-Year) | $50–$75 | 10–15% of total revenue | High |
+| Multi-Year | 75–85% (year-over-year) | $85–$150 | 45–60% of total revenue | Critical |
+| 2nd Year Reactivated | 45–55% | $55–$80 | 4–6% of total revenue | High |
+| Reactivated | 50–60% (year-over-year) | $65–$100 | 6–10% of total revenue | High |
+| Lapsed | 15–30% (reactivation) | $55–$85 | 8–14% of total revenue | Moderate |
+| Expired | 5–15% (reactivation) | $60–$95 | 3–7% of total revenue | Low–Moderate |
+
+> **BENCHMARK CONTEXT**
+> These benchmarks reflect ranges across well-managed nonprofit direct mail programs. Individual client performance will vary based on file age, mission type, average gift amount, and mailing frequency. Use these ranges as a starting point for program evaluation, not as absolute targets.
+
+---
+
+## 7. Frequently Asked Questions
+
+**Q: Can a donor be in two segments at the same time?**
+No. Each donor receives exactly one segment assignment per fiscal year. The classification rules in Section 2 are applied in hierarchical order — the first rule that applies determines the segment.
+
+**Q: What happens to a Multi-Year donor who skips one year?**
+If a Multi-Year donor does not give in the current fiscal year, they become Lapsed. Their Multi-Year history is preserved in the data — if they reactivate the following year, they will be classified as Reactivated, not Multi-Year, until they re-establish consecutive-year giving.
+
+**Q: Why are sustainers (recurring donors) sometimes excluded from lifecycle segment analysis?**
+Sustainer donors have a different revenue recognition model — their gifts arrive on a schedule rather than in response to a mail solicitation. Some programs exclude sustainers from the lifecycle segment population and track them separately in the Monthly Sustainers Report to avoid their consistent giving pattern from distorting lifecycle retention metrics.
+
+**Q: What is the difference between Lapsed and Expired?**
+Lapsed means the donor gave in the prior fiscal year but not the current year — they have been non-responsive for one year. Expired means the donor has not given for two or more consecutive fiscal years. The distinction matters strategically: Lapsed donors are the primary target of the reactivation program; Expired donors receive lower-frequency deep-lapsed outreach.
+
+---
+
+## 8. Document Revision History
+
+| Version | Date | Author | Summary of Changes |
+|---|---|---|---|
+| 1.0 | March 2025 | David Ogunfowora | Initial release. Full segment definitions, classification logic, progression scenarios, KPI benchmarks, and FAQ. |
+
+---
+
+*FOR INTERNAL USE — STRATEGY TEAMS & CLIENT ADVISORY · © 2025 Clearfield Data Solutions*
